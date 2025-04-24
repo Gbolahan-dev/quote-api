@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.get('/', (req, res) => {
-  res.send("Welcome to the Quote API 😎");
+  res.send("Welcome to the Quote API v2 baby 😎");
 });
 
 app.get('/', (req, res) => {
