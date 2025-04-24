@@ -8,6 +8,11 @@ app.get('/', (req, res) => {
   res.send("Welcome to the Quote API v2 baby 😎");
 });
 
+app.get('/', (req, res) => {
+  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  res.json({ quote: randomQuote });
+});
+
 app.get('/quote', (req, res) => {
   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
   res.json({ quote: randomQuote });
