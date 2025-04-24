@@ -4,3 +4,6 @@ steps:
 
 images:
   - 'gcr.io/daring-emitter-457812-v7/quote-api'
+
+options:
+  logging: CLOUD_LOGGING_ONLY 
