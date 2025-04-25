@@ -2,6 +2,19 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/daring-emitter-457812-v7/quote-api', '.']
 
+ 
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: gcloud
+    args: 
+      - run
+      - deploy
+      - quote-api
+      - --image=gcr.io/daring-emitter-457812-v7/quote-api
+      - --platform=managed
+      - --region=us-central1
+      - --allow-unauthenticated
+
+
 images:
   - 'gcr.io/daring-emitter-457812-v7/quote-api'
 
