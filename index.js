@@ -19,5 +19,11 @@ app.get('/quotes', (req, res) =>{
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+ console.log(JSON.stringify({
+  severity: "INFO",
+  message: `Server running at http://localhost:${PORT}`,
+  serviceContext: {
+    service: "quote-api",
+  },
+}));
+
