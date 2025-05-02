@@ -1,25 +1,26 @@
-// index.js
 const express = require('express');
-const quotes  = require('./quotes.json');
+const quotes = require('./quotes.json');
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Normal welcome route
+// Home
 app.get('/', (req, res) => {
   res.send('Welcome to the Quote API v2 baby 😎');
 });
 
-// CRASH‑TEST route
-app.get('/quote', (req, res) => {
-  // Pick a random quote (or hard‑code “Boom!”)
-  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-  res.json({ quote: randomQuote });
-
-  // Log and crash 5 s later
-  console.error('💥 Simulated fatal error — container will exit in 5 s');
-  setTimeout(() => process.exit(1), 5000);
+// 🔥 Crash‑on‑request demo
+app.get('/quote', (_, res) => {
+  res.json({ quote: 'Boom! Simulated crash in 5 s' });
+  setTimeout(() => {
+    console.error('💥  Simulated fatal error — exiting');
+    process.exit(1);           // kills the container
+  }, 5000);
 });
 
-app.listen(PORT, () => console.log(`✅ listening on ${PORT}`));
+// All quotes
+app.get('/quotes', (_, res) => res.json(quotes));
+
+// Start server
+app.listen(PORT, () => console.log(`listening on ${PORT}`));
 
