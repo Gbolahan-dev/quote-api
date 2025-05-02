@@ -1,22 +1,23 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--no-cache','-t', 'gcr.io/daring-emitter-457812-v7/quote-api:${SHORT_SHA}', '.']
+    args: ['build', '--no-cache','-t', 'gcr.io/daring-emitter-457812-v7/quote-api:${SHORT_SHA}', '-t', 'gcr.io/daring-emitter-457812-v7/quote-api:latest', '.']
 
- 
+
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
-    args: 
+    args:
       - run
       - deploy
       - quote-api
-      - --image=gcr.io/daring-emitter-457812-v7/quote-api
+      - --image=gcr.io/daring-emitter-457812-v7/quote-api:latest
       - --platform=managed
       - --region=us-central1
       - --allow-unauthenticated
 
 
 images:
-  - 'gcr.io/daring-emitter-457812-v7/quote-api'
+  - 'gcr.io/daring-emitter-457812-v7/quote-api:${SHORT_SHA}'
+  - 'gcr.io/daring-emitter-457812-v7/quote-api:latest'
 
 options:
-  logging: CLOUD_LOGGING_ONLY 
+  logging: CLOUD_LOGGING_ONLY
