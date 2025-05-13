@@ -1,23 +1,12 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--no-cache','-t', 'gcr.io/daring-emitter-457812-v7/quote-api:${SHORT_SHA}', '-t', 'gcr.io/daring-emitter-457812-v7/quote-api:latest', '.']
-
-
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
     args:
-      - run
-      - deploy
-      - quote-api
-      - --image=gcr.io/daring-emitter-457812-v7/quote-api:latest
-      - --platform=managed
-      - --region=us-central1
-      - --allow-unauthenticated
-
-
-images:
-  - 'gcr.io/daring-emitter-457812-v7/quote-api:${SHORT_SHA}'
-  - 'gcr.io/daring-emitter-457812-v7/quote-api:latest'
+      - '-c'
+      - |
+        echo "Hello from PR-trigger sanity test"
+        gcloud info
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
