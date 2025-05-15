@@ -1,12 +1,65 @@
 steps:
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "Hello from PR-trigger sanity test"
-        gcloud info
+# ------------------------------------------------------------
+# 1 – Build Docker image
+# ------------------------------------------------------------
+- name: gcr.io/cloud-builders/docker
+  id: build-image
+  args:
+    - build
+    - '--no-cache'
+    - '-t'
+    - gcr.io/$PROJECT_ID/quote-api:${SHORT_SHA}
+    - '-t'
+    - gcr.io/$PROJECT_ID/quote-api:latest
+    - .
 
+# ------------------------------------------------------------
+# 2 – Push both tags
+# ------------------------------------------------------------
+- name: gcr.io/cloud-builders/docker
+  id: push-image-short-sha
+  args: ['push', 'gcr.io/$PROJECT_ID/quote-api:${SHORT_SHA}']
+
+- name: gcr.io/cloud-builders/docker
+  id: push-image-latest
+  args: ['push', 'gcr.io/$PROJECT_ID/quote-api:latest']
+
+# ------------------------------------------------------------
+# 3 – Deploy to Cloud Run *only* on main-branch trigger
+#    (i.e. when _TARGET_ENV substitution == "prod")
+# ------------------------------------------------------------
+- name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  id: deploy
+  entrypoint: gcloud
+  args:
+    - run
+    - deploy
+    - quote-api
+    - '--image=gcr.io/$PROJECT_ID/quote-api:latest'
+    - '--platform=managed'
+    - '--region=us-central1'
+    - '--allow-unauthenticated'
+  if: '$[_TARGET_ENV] == "prod"'
+
+# ------------------------------------------------------------
+# 4 – Canary traffic split 10 % / 90 %  (optional)
+# ------------------------------------------------------------
+- name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  id: canary-split
+  entrypoint: gcloud
+  args:
+    - run
+    - services
+    - update-traffic
+    - quote-api
+    - '--to-revisions=${SHORT_SHA}=10,latest=90'
+    - '--platform=managed'
+    - '--region=us-central1'
+  if: '$[_TARGET_ENV] == "prod"'
+
+# ------------------------------------------------------------
+# 5 – Logging option
+# ------------------------------------------------------------
 options:
   logging: CLOUD_LOGGING_ONLY
 
