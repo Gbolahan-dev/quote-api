@@ -15,7 +15,7 @@ steps:
 
 # 2) Deploy to Cloud Run (ONLY for prod)
 - id: deploy-prod
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  name: gcr.io/google.com/cloudsdktool/gcloud
   entrypoint: bash
   args:
     - -c
@@ -33,7 +33,7 @@ steps:
 
 # 3) Optional canary split (10 % to new rev) – ONLY for prod
 - id: canary-split
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  name: gcr.io/google.com/cloudsdktool/gcloud
   entrypoint: bash
   args:
     - -c
