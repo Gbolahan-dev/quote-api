@@ -67,7 +67,7 @@ steps:
         gcloud run services update-traffic quote-api \
           --region=us-central1 \
           --platform=managed \
-          --to-revisions=${REVISION}=10,latest=90
+          --to-revisions=$${REVISION}=10,latest=90
       else
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
