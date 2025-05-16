@@ -46,6 +46,7 @@ steps:
         echo "⚠️  Skipping deploy – _TARGET_ENV=$${_TARGET_ENV}"
       fi
 
+
 # 3) Optional canary split (10 % to new rev) – ONLY for prod
 - id: canary-split
   name: gcr.io/cloud-builders/gcloud
@@ -54,20 +55,50 @@ steps:
     - -c
     - |
       if [[ "$_TARGET_ENV" == "prod" ]]; then
-        # Fetch the latest revision name (always valid format)
-        REVISION=$(gcloud run revisions list \
+        echo "🔍 Fetching latest two revisions for canary split..."
+        # Fetch the two most recent revisions
+        # The first one is the new one (just deployed)
+        # The second one is the previous stable one
+        REVISIONS=$(gcloud run revisions list \
           --service=quote-api \
           --region=us-central1 \
           --platform=managed \
-          --sort-by=~metadata.creationTimestamp \
-          --limit=1 \
-          --format='value(metadata.name)')
+          --sort-by="~metadata.creationTimestamp" \
+          --limit=2 \
+          --format="value(metadata.name)")
 
-        echo "🪄 Applying canary split to revision $REVISION"
-        gcloud run services update-traffic quote-api \
-          --region=us-central1 \
-          --platform=managed \
-          --to-revisions=$${REVISION}=10,latest=90
+        # Convert multi-line output to an array
+        mapfile -t REV_ARRAY <<< "$REVISIONS"
+
+        NEW_REVISION="${REV_ARRAY[0]}"
+        PREVIOUS_STABLE_REVISION=""
+        if [[ ${#REV_ARRAY[@]} -gt 1 ]]; then
+          PREVIOUS_STABLE_REVISION="${REV_ARRAY[1]}"
+        fi
+
+        if [[ -z "$NEW_REVISION" ]]; then
+          echo "❌ ERROR: Could not fetch new revision name. Skipping canary."
+          exit 1 # Or handle error differently
+        fi
+
+        echo "🆕 New Revision: $NEW_REVISION"
+        if [[ -n "$PREVIOUS_STABLE_REVISION" ]]; then
+          echo "🕰️ Previous Stable Revision: $PREVIOUS_STABLE_REVISION"
+          echo "🪄 Applying 10% canary to $NEW_REVISION, 90% to $PREVIOUS_STABLE_REVISION"
+          gcloud run services update-traffic quote-api \
+            --region=us-central1 \
+            --platform=managed \
+            --to-revisions="$${NEW_REVISION}=10,$${PREVIOUS_STABLE_REVISION}=90" \
+            --project=$PROJECT_ID
+        else
+          echo "✅ Only one revision exists ($NEW_REVISION). All traffic (100%) automatically goes to it. No canary split needed."
+          # If you want to explicitly tag the new revision as LATEST (though deploy should do it)
+          # gcloud run services update-traffic quote-api \
+          #   --region=us-central1 \
+          #   --platform=managed \
+          #   --to-revisions="$${NEW_REVISION}=100" \
+          #   --project=$PROJECT_ID
+        fi
       else
         echo "⚠️  Skipping canary – _TARGET_ENV=$${_TARGET_ENV}"
       fi
