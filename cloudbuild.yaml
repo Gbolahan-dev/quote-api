@@ -38,10 +38,10 @@ steps:
         echo "🔄 Deploying to Cloud Run (prod)…"
         gcloud run deploy quote-api \
           --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest \
+          --revision-suffix=sha-${SHORT_SHA} \
           --region=us-central1 \
           --platform=managed \
           --allow-unauthenticated
-          --revision-suffix=sha-$SHORT_SHA
       else
         echo "⚠️  Skipping deploy – _TARGET_ENV=$${_TARGET_ENV}"
       fi
