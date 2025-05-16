@@ -54,13 +54,22 @@ steps:
     - -c
     - |
       if [[ "$_TARGET_ENV" == "prod" ]]; then
-        echo "🪄 Updating traffic split (10 % canary)…"
-        gcloud run services update-traffic quote-api \
-          --to-revisions=$quote-api-sha-{SHORT_SHA}=10,latest=90 \
+        # Fetch the latest revision name (always valid format)
+        REVISION=$(gcloud run revisions list \
+          --service=quote-api \
           --region=us-central1 \
-          --platform=managed
+          --platform=managed \
+          --sort-by=~metadata.creationTimestamp \
+          --limit=1 \
+          --format='value(metadata.name)')
+
+        echo "🪄 Applying canary split to revision $REVISION"
+        gcloud run services update-traffic quote-api \
+          --region=us-central1 \
+          --platform=managed \
+          --to-revisions=${REVISION}=10,latest=90
       else
-        echo "⚠️  Skipping canary – _TARGET_ENV=$${_TARGET_ENV}"
+        echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
 options:
