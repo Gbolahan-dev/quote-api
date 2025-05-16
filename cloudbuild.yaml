@@ -13,7 +13,21 @@ steps:
     - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
     - .
 
-# 2) Deploy to Cloud Run (ONLY for prod)
+# 2) Push both tags
+- id: push-image
+  name: gcr.io/cloud-builders/docker
+  args:
+    - push
+    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
+- id: push-latest
+  name: gcr.io/cloud-builders/docker
+  args:
+    - push
+    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
+
+
+
+# 3) Deploy to Cloud Run (ONLY for prod)
 - id: deploy-prod
   name: gcr.io/cloud-builders/gcloud
   entrypoint: bash
