@@ -6,7 +6,7 @@
 steps:
 # 1) Build & push image
 - id: build-image
-  name: gcr.io/cloud-builders/docker
+  name: us-central1-docker.pkg.dev/cloud-builders/docker
   args:
     - build
     - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:${SHORT_SHA}'
