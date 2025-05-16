@@ -9,13 +9,27 @@ steps:
   name: gcr.io/cloud-builders/docker
   args:
     - build
-    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:${SHORT_SHA}'
-    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:latest'
+    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
+    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
     - .
 
-# 2) Deploy to Cloud Run (ONLY for prod)
+# 2) Push both tags
+- id: push-image
+  name: gcr.io/cloud-builders/docker
+  args:
+    - push
+    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
+- id: push-latest
+  name: gcr.io/cloud-builders/docker
+  args:
+    - push
+    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
+
+
+
+# 3) Deploy to Cloud Run (ONLY for prod)
 - id: deploy-prod
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  name: gcr.io/cloud-builders/gcloud
   entrypoint: bash
   args:
     - -c
@@ -23,7 +37,7 @@ steps:
       if [[ "$_TARGET_ENV" == "prod" ]]; then
         echo "🔄 Deploying to Cloud Run (prod)…"
         gcloud run deploy quote-api \
-          --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:latest \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest \
           --region=us-central1 \
           --platform=managed \
           --allow-unauthenticated
@@ -33,7 +47,7 @@ steps:
 
 # 3) Optional canary split (10 % to new rev) – ONLY for prod
 - id: canary-split
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  name: gcr.io/cloud-builders/gcloud
   entrypoint: bash
   args:
     - -c
