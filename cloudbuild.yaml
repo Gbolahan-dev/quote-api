@@ -9,8 +9,8 @@ steps:
   name: gcr.io/cloud-builders/docker
   args:
     - build
-    - '--tag=gcr.io/$PROJECT_ID/quote-api:${SHORT_SHA}'
-    - '--tag=gcr.io/$PROJECT_ID/quote-api:latest'
+    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:${SHORT_SHA}'
+    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:latest'
     - .
 
 # 2) Deploy to Cloud Run (ONLY for prod)
@@ -23,7 +23,7 @@ steps:
       if [[ "$_TARGET_ENV" == "prod" ]]; then
         echo "🔄 Deploying to Cloud Run (prod)…"
         gcloud run deploy quote-api \
-          --image=gcr.io/$PROJECT_ID/quote-api:latest \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api:latest \
           --region=us-central1 \
           --platform=managed \
           --allow-unauthenticated
