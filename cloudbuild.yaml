@@ -41,6 +41,7 @@ steps:
           --region=us-central1 \
           --platform=managed \
           --allow-unauthenticated
+          --revision-suffix=sha-$SHORT_SHA
       else
         echo "⚠️  Skipping deploy – _TARGET_ENV=$${_TARGET_ENV}"
       fi
@@ -55,7 +56,7 @@ steps:
       if [[ "$_TARGET_ENV" == "prod" ]]; then
         echo "🪄 Updating traffic split (10 % canary)…"
         gcloud run services update-traffic quote-api \
-          --to-revisions=${SHORT_SHA}=10,latest=90 \
+          --to-revisions=$quote-api-sha-{SHORT_SHA}=10,latest=90 \
           --region=us-central1 \
           --platform=managed
       else
