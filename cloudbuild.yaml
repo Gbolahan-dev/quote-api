@@ -27,6 +27,7 @@ steps:
 
 
 
+
 # 3) Deploy to Cloud Run (ONLY for prod)
 - id: deploy-prod
   name: gcr.io/cloud-builders/gcloud
@@ -46,7 +47,6 @@ steps:
         echo "⚠️  Skipping deploy – _TARGET_ENV=$${_TARGET_ENV}"
       fi
 
-
 # 3) Optional canary split (10 % to new rev) – ONLY for prod
 - id: canary-split
   name: gcr.io/cloud-builders/gcloud
@@ -54,50 +54,64 @@ steps:
   args:
     - -c
     - |
+      # Cloud Build substitutions (like $_TARGET_ENV, ${PROJECT_ID}) use single '$'
       if [[ "$_TARGET_ENV" == "prod" ]]; then
         echo "🔍 Fetching latest two revisions for canary split..."
-        # Cloud Build will NOT try to substitute \${REVISIONS}, bash will handle it.
-        REVISIONS=$$(gcloud run revisions list \
+
+        # For BASH internal variables and command substitution:
+        # Use '$$' to ensure Cloud Build passes a literal '$' to bash.
+        # Renamed REVISIONS to _cb_revision_list_output for uniqueness.
+        _cb_revision_list_output=$$(gcloud run revisions list \
           --service=quote-api \
           --region=us-central1 \
           --platform=managed \
           --sort-by="~metadata.creationTimestamp" \
           --limit=2 \
-          --format="value(metadata.name)")
+          --format="value(metadata.name)" \
+          --project=${PROJECT_ID}) # ${PROJECT_ID} is a Cloud Build substitution
 
-        # Convert multi-line output to an array
-        mapfile -t REV_ARRAY <<< "$$REVISIONS" # Use $$REVISIONS to pass the content to mapfile
-
-        # Access array elements - escape $ for bash variables
-        NEW_REVISION="$${REV_ARRAY[0]}"
-        PREVIOUS_STABLE_REVISION=""
-        if [[ $${#REV_ARRAY[@]} -gt 1 ]]; then # Escape $ for bash variable expansion
-          PREVIOUS_STABLE_REVISION="$${REV_ARRAY[1]}"
+        # Check if the command to get revisions failed or returned empty
+        if [[ -z "$$_cb_revision_list_output" ]]; then
+          echo "❌ ERROR: Failed to fetch revision list or list is empty. Skipping canary."
+          exit 1
         fi
 
-        if [[ -z "$$NEW_REVISION" ]]; then # Escape $ for bash variable
-          echo "❌ ERROR: Could not fetch new revision name. Skipping canary."
-          exit 1 
+        # Convert multi-line output to a bash array _cb_rev_array
+        mapfile -t _cb_rev_array <<< "$$_cb_revision_list_output"
+
+        # Access array elements using bash syntax, escaping '$' with '$$' for Cloud Build
+        _cb_new_revision="$${_cb_rev_array[0]}"
+        _cb_previous_stable_revision="" # Default to empty
+
+        if [[ $${#_cb_rev_array[@]} -gt 1 ]]; then
+          _cb_previous_stable_revision="$${_cb_rev_array[1]}"
         fi
 
-        echo "🆕 New Revision: $$NEW_REVISION" # Escape $
-        if [[ -n "$$PREVIOUS_STABLE_REVISION" ]]; then # Escape $
-          echo "🕰️ Previous Stable Revision: $$PREVIOUS_STABLE_REVISION" # Escape $
-          echo "🪄 Applying 10% canary to $$NEW_REVISION, 90% to $$PREVIOUS_STABLE_REVISION" # Escape $
+        # Validate that _cb_new_revision is not empty
+        if [[ -z "$$_cb_new_revision" ]]; then
+          echo "❌ ERROR: Could not determine new revision name from fetched list. Skipping canary."
+          exit 1
+        fi
+
+        echo "🆕 New Revision: $$_cb_new_revision"
+        if [[ -n "$$_cb_previous_stable_revision" ]]; then
+          echo "🕰️ Previous Stable Revision: $$_cb_previous_stable_revision"
+          echo "🪄 Applying 10% canary to $$_cb_new_revision, 90% to $$_cb_previous_stable_revision"
           gcloud run services update-traffic quote-api \
             --region=us-central1 \
             --platform=managed \
-            --to-revisions="$$NEW_REVISION=10,$$PREVIOUS_STABLE_REVISION=90" \ # Escape $
-            --project=$$PROJECT_ID # $$PROJECT_ID is a Cloud Build substitution, so it's fine
-                                   # OR, if you want to be explicit: --project=${PROJECT_ID}
+            --to-revisions="$$_cb_new_revision=10,$$_cb_previous_stable_revision=90" \
+            --project=${PROJECT_ID} # Cloud Build substitution
         else
-          echo "✅ Only one revision exists ($$NEW_REVISION). All traffic (100%) automatically goes to it. No canary split needed." # Escape $
+          # Only one revision exists (the new one), so it gets all traffic by default.
+          echo "✅ Only one revision exists ($$_cb_new_revision). All traffic (100%) automatically goes to it. No canary split needed."
         fi
       else
-        # For _TARGET_ENV, which IS a Cloud Build substitution, you use a single $
-        echo "⚠️  Skipping canary – _TARGET_ENV=$_TARGET_ENV" 
-        # OR echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
+        # $_TARGET_ENV is a Cloud Build substitution, so single '$' is correct
+        echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
+
+      
 options:
   logging: CLOUD_LOGGING_ONLY
 
