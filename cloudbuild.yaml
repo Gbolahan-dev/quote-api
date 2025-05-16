@@ -56,10 +56,8 @@ steps:
     - |
       if [[ "$_TARGET_ENV" == "prod" ]]; then
         echo "🔍 Fetching latest two revisions for canary split..."
-        # Fetch the two most recent revisions
-        # The first one is the new one (just deployed)
-        # The second one is the previous stable one
-        REVISIONS=$(gcloud run revisions list \
+        # Cloud Build will NOT try to substitute \${REVISIONS}, bash will handle it.
+        REVISIONS=$$(gcloud run revisions list \
           --service=quote-api \
           --region=us-central1 \
           --platform=managed \
@@ -68,41 +66,38 @@ steps:
           --format="value(metadata.name)")
 
         # Convert multi-line output to an array
-        mapfile -t REV_ARRAY <<< "$REVISIONS"
+        mapfile -t REV_ARRAY <<< "$$REVISIONS" # Use $$REVISIONS to pass the content to mapfile
 
-        NEW_REVISION="${REV_ARRAY[0]}"
+        # Access array elements - escape $ for bash variables
+        NEW_REVISION="$${REV_ARRAY[0]}"
         PREVIOUS_STABLE_REVISION=""
-        if [[ ${#REV_ARRAY[@]} -gt 1 ]]; then
-          PREVIOUS_STABLE_REVISION="${REV_ARRAY[1]}"
+        if [[ $${#REV_ARRAY[@]} -gt 1 ]]; then # Escape $ for bash variable expansion
+          PREVIOUS_STABLE_REVISION="$${REV_ARRAY[1]}"
         fi
 
-        if [[ -z "$NEW_REVISION" ]]; then
+        if [[ -z "$$NEW_REVISION" ]]; then # Escape $ for bash variable
           echo "❌ ERROR: Could not fetch new revision name. Skipping canary."
-          exit 1 # Or handle error differently
+          exit 1 
         fi
 
-        echo "🆕 New Revision: $NEW_REVISION"
-        if [[ -n "$PREVIOUS_STABLE_REVISION" ]]; then
-          echo "🕰️ Previous Stable Revision: $PREVIOUS_STABLE_REVISION"
-          echo "🪄 Applying 10% canary to $NEW_REVISION, 90% to $PREVIOUS_STABLE_REVISION"
+        echo "🆕 New Revision: $$NEW_REVISION" # Escape $
+        if [[ -n "$$PREVIOUS_STABLE_REVISION" ]]; then # Escape $
+          echo "🕰️ Previous Stable Revision: $$PREVIOUS_STABLE_REVISION" # Escape $
+          echo "🪄 Applying 10% canary to $$NEW_REVISION, 90% to $$PREVIOUS_STABLE_REVISION" # Escape $
           gcloud run services update-traffic quote-api \
             --region=us-central1 \
             --platform=managed \
-            --to-revisions="$${NEW_REVISION}=10,$${PREVIOUS_STABLE_REVISION}=90" \
-            --project=$PROJECT_ID
+            --to-revisions="$$NEW_REVISION=10,$$PREVIOUS_STABLE_REVISION=90" \ # Escape $
+            --project=$$PROJECT_ID # $$PROJECT_ID is a Cloud Build substitution, so it's fine
+                                   # OR, if you want to be explicit: --project=${PROJECT_ID}
         else
-          echo "✅ Only one revision exists ($NEW_REVISION). All traffic (100%) automatically goes to it. No canary split needed."
-          # If you want to explicitly tag the new revision as LATEST (though deploy should do it)
-          # gcloud run services update-traffic quote-api \
-          #   --region=us-central1 \
-          #   --platform=managed \
-          #   --to-revisions="$${NEW_REVISION}=100" \
-          #   --project=$PROJECT_ID
+          echo "✅ Only one revision exists ($$NEW_REVISION). All traffic (100%) automatically goes to it. No canary split needed." # Escape $
         fi
       else
-        echo "⚠️  Skipping canary – _TARGET_ENV=$${_TARGET_ENV}"
+        # For _TARGET_ENV, which IS a Cloud Build substitution, you use a single $
+        echo "⚠️  Skipping canary – _TARGET_ENV=$_TARGET_ENV" 
+        # OR echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
-
 options:
   logging: CLOUD_LOGGING_ONLY
 
