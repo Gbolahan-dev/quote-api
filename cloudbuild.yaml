@@ -111,24 +111,12 @@ steps:
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
-# 4) Deploy to GKE (ONLY on main/prod)
-- id: deploy-gke
-  name: gcr.io/cloud-builders/kubectl
-  entrypoint: bash
-  args:
-    - -c
-    - |
-      # configure kubectl for your cluster
-      gcloud container clusters get-credentials quote-api-cluster \
-        --zone us-central1-a \
-        --project=${PROJECT_ID}
-      # roll your Deployment forward
-      kubectl set image deployment/quote-api \
-        quote-api=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api:latest
 
 
 # 5)Helm upgrade step
     - name: 'gcr.io/cloud-builders/helm' # Or appropriate helm builder
+      id: helm-upgrade-gke # It's good practice to give steps an 'id'
+      entrypoint: 'helm'
       args:
         - 'upgrade'
         - '--install'
