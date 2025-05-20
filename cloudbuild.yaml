@@ -125,7 +125,23 @@ steps:
       # roll your Deployment forward
       kubectl set image deployment/quote-api \
         quote-api=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api:latest
- 
+
+
+# 5)Helm upgrade step
+    - name: 'gcr.io/cloud-builders/helm' # Or appropriate helm builder
+      args:
+        - 'upgrade'
+        - '--install'
+        - 'quote-api'
+        - './charts/quote-api' # Path to your chart
+        - '--namespace'
+        - 'quote-api'
+        - '--set'
+        - 'image.tag=${SHORT_SHA}' # <-- CRUCIAL OVERRIDE
+        # You can also set image.repository here if it's dynamic
+        - '--set'
+        - 'image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api'
+       
 options:
   logging: CLOUD_LOGGING_ONLY
 
