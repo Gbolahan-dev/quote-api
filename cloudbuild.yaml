@@ -112,20 +112,23 @@ steps:
       fi
 
 
-# 4) Deploy to GKE (ONLY on main/prod)
+# new
 - id: deploy-gke
-  name: gcr.io/cloud-builders/kubectl
+  name: alpine/helm:3.8.2
   entrypoint: bash
   args:
     - -c
     - |
-      # configure kubectl for your cluster
+      # 1) point gcloud/helm at your cluster
       gcloud container clusters get-credentials quote-api-cluster \
         --zone us-central1-a \
-        --project=${PROJECT_ID}
-      # roll your Deployment forward
-      kubectl set image deployment/quote-api \
-        quote-api=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api:latest
+        --project="${PROJECT_ID}"
+      # 2) perform a Helm upgrade (install if missing)
+      helm upgrade --install quote-api charts/quote-api \
+        --namespace quote-api \
+        --set image.repository=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api \
+        --set image.tag=${SHORT_SHA} \
+        --set image.pullPolicy=Always
 
 options:
   logging: CLOUD_LOGGING_ONLY
