@@ -112,7 +112,7 @@ steps:
       fi
 
 - id: deploy-to-gke-with-helm
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim' # Or a fuller gcloud-sdk image
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
   entrypoint: 'bash'
   args:
     - '-c'
@@ -120,8 +120,10 @@ steps:
       set -e # Exit immediately if a command exits with a non-zero status.
       set -x # Print commands and their arguments as they are executed.
 
-      echo "Installing kubectl component..."
-      gcloud components install kubectl --quiet # Add --quiet to avoid prompts
+      echo "Updating package list and installing kubectl..."
+      # apt-get update is often needed before installing new packages
+      apt-get update -y 
+      apt-get install -y kubectl # No sudo needed as Cloud Build steps often run as root
 
       echo "Installing Helm client..."
       HELM_VERSION="v3.12.0" 
@@ -130,9 +132,8 @@ steps:
       ./get_helm.sh --version $$HELM_VERSION
       
       echo "Configuring kubectl for GKE cluster..."
-      # REPLACE THESE PLACEHOLDERS with your actual cluster name and zone!
-      gcloud container clusters get-credentials YOUR_GKE_CLUSTER_NAME \
-        --zone YOUR_GKE_CLUSTER_ZONE \
+      gcloud container clusters get-credentials quote-api-cluster \
+        --zone us-central1-a \
         --project=${PROJECT_ID}
       
       echo "Running helm upgrade..."
@@ -146,7 +147,7 @@ steps:
       
       echo "Helm deployment completed."
   # waitFor: ['YourAppImagePushStepID']
-
+  
 options:
   logging: CLOUD_LOGGING_ONLY
 
