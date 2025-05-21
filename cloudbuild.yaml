@@ -111,30 +111,26 @@ steps:
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
-- id: deploy-gke
-  # cloud-sdk image has gcloud + kubectl; we add Helm with curl
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
-  entrypoint: sh
+- id: deploy-helm
+  name: 'gcr.io/cloud-builders/helm:v3.12.0'
+  entrypoint: 'bash' # Or 'sh'
   args:
-    - -exc              # -e exit on error, -x echo commands
+    - '-c'
     - |
-      # Authenticate kubectl
-      gcloud container clusters get-credentials quote-api-cluster \
-        --zone us-central1-a \
-        --project="${PROJECT_ID}"
+      echo "Setting up Kubeconfig for Helm..."
+      gcloud container clusters get-credentials YOUR_CLUSTER_NAME \
+        --zone YOUR_ZONE \
+        --project=${PROJECT_ID}
 
-      # Install Helm (one-liner; tiny and fast)
-      curl -sSL https://get.helm.sh/helm-v3.14.2-linux-amd64.tar.gz | \
-        tar xz && mv linux-amd64/helm /usr/local/bin/helm
-
-      # Deploy chart
-      helm upgrade --install quote-api charts/quote-api \
+      echo "Running helm upgrade..."
+      helm upgrade --install quote-api ./charts/quote-api \
         --namespace quote-api \
         --create-namespace \
-        --set image.repository=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api \
         --set image.tag=${SHORT_SHA} \
-        --set image.pullPolicy=Always \
-        --atomic
+        --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
+        --atomic \
+        --timeout 5m
+  # waitFor: ['YourPushStepID']
 
 options:
   logging: CLOUD_LOGGING_ONLY
