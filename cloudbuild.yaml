@@ -110,23 +110,24 @@ steps:
         # $_TARGET_ENV is a Cloud Build substitution, so single '$' is correct
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
-
-# 5) Helm upgrade step
-- id: deploy-helm # Add an ID for clarity and waitFor
-  name: 'gcr.io/cloud-builders/helm:v3.12.0' # This image DOES exist
+      
+- id: deploy-gke
+  name: alpine/helm:3.8.2
+  entrypoint: sh
   args:
-    - 'upgrade'
-    - '--install'
-    - 'quote-api'         # Your Helm release name
-    - './charts/quote-api' # Path to your chart
-    - '--namespace'
-    - 'quote-api'
-    - '--create-namespace' # Good to have
-    - '--set'
-    - 'image.tag=${SHORT_SHA}'
-    - '--set'
-    - 'image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api'
-  # waitFor: ['Push Latest'] # Or whatever your last push step ID is, if you want to ensure pushes complete first
+    - -c
+    - |
+      # Authenticate kubectl to your GKE cluster
+      gcloud container clusters get-credentials quote-api-cluster \
+        --zone us-central1-a \
+        --project="${PROJECT_ID}"
+      # Perform a Helm upgrade/install so your chart (probes, pullPolicy, env, etc.) is applied
+      helm upgrade --install quote-api charts/quote-api \
+        --namespace quote-api \
+        --set image.repository=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api \
+        --set image.tag=${SHORT_SHA} \
+        --set image.pullPolicy=Always
+
 options:
   logging: CLOUD_LOGGING_ONLY
 
