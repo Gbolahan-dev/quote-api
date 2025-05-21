@@ -110,21 +110,41 @@ steps:
         # $_TARGET_ENV is a Cloud Build substitution, so single '$' is correct
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
-- id: deploy-helm
-  name: 'alpine/helm:3.8.2' # You changed this from gcr.io/cloud-builders/helm
+
+- id: deploy- not, and you must use alpine/helm, proper auth is key.
+
+  # The alpine/helm image likely DOEShelm
+  name: 'gcr.io/cloud-builders/helm:v3.12.0' # Use a specific, stable version
   args:
     - 'upgrade'
     - '--install'
-    - 'quote-api'
-    - './charts/quote-api'
+    - NOT have gcloud.
+  # So this gcloud command will fail within the alpine/helm container.
+  # 'quote-api'         # Your Helm release name
+    - './charts/quote-api' # Path to your gcloud container clusters get-credentials quote-api-cluster \
+  #  --zone us-central1- chart
     - '--namespace'
     - 'quote-api'
-    - '--create-namespace'
+    - '--create-namespace' #a \
+  #  --project=${PROJECT_ID}
+
+  echo "Running helm upgrade..."
+  # Helm Good to have
     - '--set'
     - 'image.tag=${SHORT_SHA}'
     - '--set'
-    - 'image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api'
-
+    - 'image.repository=us-central1-docker.pkg.dev/$PROJECT_ID needs a KUBECONFIG or to be running where kubectl is configured.
+  # Without the gcloud get-credentials above,/quote-api/quote-api'
+    - '--atomic' # This is a good flag: waits for deployment to be this helm command will likely fail
+  # to connect to your cluster.
+  helm upgrade --install quote-api ./charts/quote-api \
+    --namespace quote-api \
+    --create-namespace \
+    --set image. ready & rolls back on failure
+    - '--timeout' # Example: wait up to 5 minutes
+    -tag=${SHORT_SHA} \
+    --set image.repository=us-central1-docker.pkg. '5m'
+  # waitFor: ['YourPushStepID'] # Make sure images are pushed first
 options:
   logging: CLOUD_LOGGING_ONLY
 
