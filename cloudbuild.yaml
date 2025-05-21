@@ -112,25 +112,26 @@ steps:
       fi
 
 - id: deploy-helm
-  name: 'gcr.io/cloud-builders/helm:v3.12.0'
-  entrypoint: 'bash' # Or 'sh'
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+  entrypoint: sh
   args:
-    - '-c'
+    - -exc
     - |
-      echo "Setting up Kubeconfig for Helm..."
-      gcloud container clusters get-credentials YOUR_CLUSTER_NAME \
-        --zone YOUR_ZONE \
-        --project=${PROJECT_ID}
+      # Install Helm (one-liner, <1 s)
+      curl -sSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | \
+        tar xz && mv linux-amd64/helm /usr/local/bin/helm
 
-      echo "Running helm upgrade..."
-      helm upgrade --install quote-api ./charts/quote-api \
+      gcloud container clusters get-credentials quote-api-cluster \
+        --zone us-central1-a \
+        --project="${PROJECT_ID}"
+
+      helm upgrade --install quote-api charts/quote-api \
         --namespace quote-api \
         --create-namespace \
+        --set image.repository=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api \
         --set image.tag=${SHORT_SHA} \
-        --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
-        --atomic \
-        --timeout 5m
-  # waitFor: ['YourPushStepID']
+        --set image.pullPolicy=Always \
+        --atomic
 
 options:
   logging: CLOUD_LOGGING_ONLY
