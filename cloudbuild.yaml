@@ -111,32 +111,41 @@ steps:
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
-- id: deploy-helm
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk:latest   # full, Debian-based
-  entrypoint: bash
+- id: deploy-to-gke-with-helm
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim' # Or a fuller gcloud-sdk image
+  entrypoint: 'bash'
   args:
-    - -exc
+    - '-c'
     - |
-      # Install the auth-plugin that new kubectl expects
-      gcloud components install gke-gcloud-auth-plugin --quiet
+      set -e # Exit immediately if a command exits with a non-zero status.
+      set -x # Print commands and their arguments as they are executed.
 
-      # Authenticate kubectl to your cluster
-      gcloud container clusters get-credentials quote-api-cluster \
-        --zone us-central1-a \
-        --project="${PROJECT_ID}"
+      echo "Installing kubectl component..."
+      gcloud components install kubectl --quiet # Add --quiet to avoid prompts
 
-      # Tiny inline Helm install (1-second download)
-      curl -sSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | \
-        tar xz && mv linux-amd64/helm /usr/local/bin/helm
-
-      # Roll out via Helm
-      helm upgrade --install quote-api charts/quote-api \
+      echo "Installing Helm client..."
+      HELM_VERSION="v3.12.0" 
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      chmod 700 get_helm.sh
+      ./get_helm.sh --version $$HELM_VERSION
+      
+      echo "Configuring kubectl for GKE cluster..."
+      # REPLACE THESE PLACEHOLDERS with your actual cluster name and zone!
+      gcloud container clusters get-credentials YOUR_GKE_CLUSTER_NAME \
+        --zone YOUR_GKE_CLUSTER_ZONE \
+        --project=${PROJECT_ID}
+      
+      echo "Running helm upgrade..."
+      helm upgrade --install quote-api ./charts/quote-api \
         --namespace quote-api \
         --create-namespace \
-        --set image.repository=us-central1-docker.pkg.dev/${PROJECT_ID}/quote-api/quote-api \
+        --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
         --set image.tag=${SHORT_SHA} \
-        --set image.pullPolicy=Always \
-        --atomic
+        --atomic \
+        --timeout 5m
+      
+      echo "Helm deployment completed."
+  # waitFor: ['YourAppImagePushStepID']
 
 options:
   logging: CLOUD_LOGGING_ONLY
