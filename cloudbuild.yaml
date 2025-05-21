@@ -111,7 +111,7 @@ steps:
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
-- id: deploy-to-gke-with-helm
+  - id: deploy-to-gke-with-helm
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
   entrypoint: 'bash'
   args:
@@ -120,10 +120,9 @@ steps:
       set -e # Exit immediately if a command exits with a non-zero status.
       set -x # Print commands and their arguments as they are executed.
 
-      echo "Updating package list and installing kubectl..."
-      # apt-get update is often needed before installing new packages
+      echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
       apt-get update -y 
-      apt-get install -y kubectl # No sudo needed as Cloud Build steps often run as root
+      apt-get install -y kubectl google-cloud-sdk-gke-gcloud-auth-plugin # Install both
 
       echo "Installing Helm client..."
       HELM_VERSION="v3.12.0" 
@@ -147,7 +146,7 @@ steps:
       
       echo "Helm deployment completed."
   # waitFor: ['YourAppImagePushStepID']
-  
+
 options:
   logging: CLOUD_LOGGING_ONLY
 
