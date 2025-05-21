@@ -111,7 +111,7 @@ steps:
         echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
       fi
 
-  - id: deploy-to-gke-with-helm
+- id: deploy-to-gke-with-helm
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
   entrypoint: 'bash'
   args:
