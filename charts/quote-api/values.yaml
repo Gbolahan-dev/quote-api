@@ -5,9 +5,9 @@ serviceAccount:
   name: ""
 
 image:
-  repository: "us-central1-docker.pkg.dev/daring-emitter-457812-v7/quote-api/quote-api"
-  pullPolicy: IfNotPresent
-  tag: "latest"
+  repository: ""
+  pullPolicy: Always
+  tag: ""
 
 service:
   type: LoadBalancer
