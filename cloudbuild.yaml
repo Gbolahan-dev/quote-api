@@ -1,142 +1,166 @@
 # ────────────────────────────────────────────────────────────────
-# Cloud Build pipeline for the “quote-api” Cloud Run service
-#   • PR trigger  → _TARGET_ENV=staging  → build only
-#   • Push-main   → _TARGET_ENV=prod     → build + deploy (+ optional canary)
+# Cloud Build pipeline for the “quote-api”
+#   • PR trigger  → _TARGET_ENV=staging  → build image, push image
+#   • Push-main   → _TARGET_ENV=prod     → build image, push image, deploy Cloud Run, deploy GKE
 # ────────────────────────────────────────────────────────────────
 steps:
-# 1) Build & push image
-- id: build-image
-  name: gcr.io/cloud-builders/docker
-  args:
-    - build
-    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
-    - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
-    - .
+  # 1) Build Docker Image
+  - id: build-image
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
+      - '.' # Assumes Dockerfile is in the root
 
-# 2) Push both tags
-- id: push-image
-  name: gcr.io/cloud-builders/docker
-  args:
-    - push
-    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}'
-- id: push-latest
-  name: gcr.io/cloud-builders/docker
-  args:
-    - push
-    - 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest'
+  # 2) Push SHORT_SHA tagged image to Artifact Registry
+  - id: push-sha-image
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:${SHORT_SHA}']
+    waitFor: ['build-image']
 
+  # 3) Push 'latest' tagged image to Artifact Registry
+  - id: push-latest-image
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest']
+    waitFor: ['build-image'] # Can run in parallel with push-sha-image after build-image
 
-
-
-# 3) Deploy to Cloud Run (ONLY for prod)
-- id: deploy-prod
-  name: gcr.io/cloud-builders/gcloud
-  entrypoint: bash
-  args:
-    - -c
-    - |
-      if [[ "$_TARGET_ENV" == "prod" ]]; then
-        echo "🔄 Deploying to Cloud Run (prod)…"
-        gcloud run deploy quote-api \
-          --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest \
-          --revision-suffix=sha-${SHORT_SHA} \
-          --region=us-central1 \
-          --platform=managed \
-          --allow-unauthenticated
-      else
-        echo "⚠️  Skipping deploy – _TARGET_ENV=$${_TARGET_ENV}"
-      fi
-
-# 3) Optional canary split (10 % to new rev) – ONLY for prod
-- id: canary-split
-  name: gcr.io/cloud-builders/gcloud
-  entrypoint: bash
-  args:
-    - -c
-    - |
-      # Cloud Build substitutions (like $_TARGET_ENV, ${PROJECT_ID}) use single '$'
-      if [[ "$_TARGET_ENV" == "prod" ]]; then
-        echo "🔍 Fetching latest two revisions for canary split..."
-
-        # For BASH internal variables and command substitution:
-        # Use '$$' to ensure Cloud Build passes a literal '$' to bash.
-        # Renamed REVISIONS to _cb_revision_list_output for uniqueness.
-        _cb_revision_list_output=$$(gcloud run revisions list \
-          --service=quote-api \
-          --region=us-central1 \
-          --platform=managed \
-          --sort-by="~metadata.creationTimestamp" \
-          --limit=2 \
-          --format="value(metadata.name)" \
-          --project=${PROJECT_ID}) # ${PROJECT_ID} is a Cloud Build substitution
-
-        # Check if the command to get revisions failed or returned empty
-        if [[ -z "$$_cb_revision_list_output" ]]; then
-          echo "❌ ERROR: Failed to fetch revision list or list is empty. Skipping canary."
-          exit 1
-        fi
-
-        # Convert multi-line output to a bash array _cb_rev_array
-        mapfile -t _cb_rev_array <<< "$$_cb_revision_list_output"
-
-        # Access array elements using bash syntax, escaping '$' with '$$' for Cloud Build
-        _cb_new_revision="$${_cb_rev_array[0]}"
-        _cb_previous_stable_revision="" # Default to empty
-
-        if [[ $${#_cb_rev_array[@]} -gt 1 ]]; then
-          _cb_previous_stable_revision="$${_cb_rev_array[1]}"
-        fi
-
-        # Validate that _cb_new_revision is not empty
-        if [[ -z "$$_cb_new_revision" ]]; then
-          echo "❌ ERROR: Could not determine new revision name from fetched list. Skipping canary."
-          exit 1
-        fi
-
-        echo "🆕 New Revision: $$_cb_new_revision"
-        if [[ -n "$$_cb_previous_stable_revision" ]]; then
-          echo "🕰️ Previous Stable Revision: $$_cb_previous_stable_revision"
-          echo "🪄 Applying 10% canary to $$_cb_new_revision, 90% to $$_cb_previous_stable_revision"
-          gcloud run services update-traffic quote-api \
+  # 4) Deploy to Cloud Run (ONLY for prod)
+  - id: deploy-to-cloud-run
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          echo "🔄 Deploying to Cloud Run (prod)…"
+          gcloud run deploy quote-api \
+            --image=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest \
+            --revision-suffix=sha-${SHORT_SHA} \
             --region=us-central1 \
             --platform=managed \
-            --to-revisions="$$_cb_new_revision=10,$$_cb_previous_stable_revision=90" \
-            --project=${PROJECT_ID} # Cloud Build substitution
+            --allow-unauthenticated \
+            --project=${PROJECT_ID}
         else
-          # Only one revision exists (the new one), so it gets all traffic by default.
-          echo "✅ Only one revision exists ($$_cb_new_revision). All traffic (100%) automatically goes to it. No canary split needed."
+          echo "Skipping Cloud Run deployment – _TARGET_ENV=${_TARGET_ENV}"
         fi
-      else
-        # $_TARGET_ENV is a Cloud Build substitution, so single '$' is correct
-        echo "⚠️  Skipping canary – _TARGET_ENV=${_TARGET_ENV}"
-      fi
+    waitFor: ['push-latest-image'] # Ensure latest image is pushed
 
-# ... (previous steps) ...
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
-  id: debug-file-listing
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - |
-      echo "--- Current working directory: $(pwd) ---"
-      ls -la
-      echo "--- Listing ./charts directory (if it exists): ---"
-      ls -la ./charts
-      echo "--- Listing ./charts/quote-api directory (if it exists): ---"
-      ls -la ./charts/quote-api
-# Your Helm step, ensure it has waitFor: ['debug-file-listing'] if that step is separate
-- id: deploy-to-gke-with-helm
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim' # Or your chosen Helm builder
-  entrypoint: 'sh'
-  # ... rest of your helm step ...
-  args:
-    - '-c'
-    - |
-      # ... kubectl install, helm install, get-credentials ...
-      helm upgrade --install quote-api ./charts/quote-api \
-      # ... rest of helm command ...
-  waitFor: ['debug-file-listing'] # Good to ensure it runs after the ls
+  # 5) Optional Canary Split for Cloud Run (ONLY for prod)
+  - id: canary-split-cloud-run
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          echo "🔍 Fetching latest two revisions for Cloud Run canary split..."
+          _cb_revision_list_output=$$(gcloud run revisions list \
+            --service=quote-api \
+            --region=us-central1 \
+            --platform=managed \
+            --sort-by="~metadata.creationTimestamp" \
+            --limit=2 \
+            --format="value(metadata.name)" \
+            --project=${PROJECT_ID})
 
+          if [[ -z "$$_cb_revision_list_output" ]]; then
+            echo "❌ ERROR: Failed to fetch Cloud Run revision list or list is empty. Skipping canary."
+            exit 0 # Exit gracefully, don't fail the build
+          fi
+
+          mapfile -t _cb_rev_array <<< "$$_cb_revision_list_output"
+          _cb_new_revision="$${_cb_rev_array[0]}"
+          _cb_previous_stable_revision=""
+
+          if [[ $${#_cb_rev_array[@]} -gt 1 ]]; then
+            _cb_previous_stable_revision="$${_cb_rev_array[1]}"
+          fi
+
+          if [[ -z "$$_cb_new_revision" ]]; then
+            echo "❌ ERROR: Could not determine new Cloud Run revision name. Skipping canary."
+            exit 0 # Exit gracefully
+          fi
+
+          echo "🆕 New Cloud Run Revision: $$_cb_new_revision"
+          if [[ -n "$$_cb_previous_stable_revision" ]]; then
+            echo "🕰️ Previous Stable Cloud Run Revision: $$_cb_previous_stable_revision"
+            echo "🪄 Applying 10% canary to $$_cb_new_revision, 90% to $$_cb_previous_stable_revision for Cloud Run"
+            gcloud run services update-traffic quote-api \
+              --region=us-central1 \
+              --platform=managed \
+              --to-revisions="$$_cb_new_revision=10,$$_cb_previous_stable_revision=90" \
+              --project=${PROJECT_ID}
+          else
+            echo "✅ Only one Cloud Run revision exists ($$_cb_new_revision). All traffic (100%) automatically goes to it."
+          fi
+        else
+          echo "Skipping Cloud Run canary split – _TARGET_ENV=${_TARGET_ENV}"
+        fi
+    waitFor: ['deploy-to-cloud-run']
+
+  # 6) Debug File Listing (Optional, can be removed after confirming paths)
+  - id: debug-file-listing
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "--- Current working directory: $(pwd) ---"
+        ls -la
+        echo "--- Listing ./charts directory (if it exists): ---"
+        ls -la ./charts || true # Use '|| true' to not fail the build if dir doesn't exist
+        echo "--- Listing ./charts/quote-api directory (if it exists): ---"
+        ls -la ./charts/quote-api || true # Use '|| true'
+    waitFor: ['push-sha-image'] # Just needs the repo checkout
+
+  # 7) Deploy to GKE with Helm (ONLY for prod)
+  - id: deploy-to-gke-with-helm
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          set -e # Exit immediately if a command exits with a non-zero status
+          set -x # Print commands and their arguments as they are executed
+
+          echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
+          apt-get update -y 
+          apt-get install -y kubectl google-cloud-sdk-gke-gcloud-auth-plugin
+
+          echo "Installing Helm client..."
+          HELM_VERSION="v3.12.0" # Specify desired Helm 3 version
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh --version $$HELM_VERSION
+          
+          echo "Configuring kubectl for GKE cluster..."
+          # !!! REPLACE THESE WITH YOUR ACTUAL CLUSTER NAME AND ZONE !!!
+          gcloud container clusters get-credentials quote-api-cluster \
+            --zone us-central1-a \
+            --project=${PROJECT_ID}
+          
+          echo "Running helm upgrade for GKE..."
+          helm upgrade --install quote-api ./charts/quote-api \
+            --namespace quote-api \
+            --create-namespace \
+            --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
+            --set image.tag=${SHORT_SHA} \
+            --atomic \
+            --timeout 5m
+          
+          echo "Helm deployment to GKE completed."
+        else
+          echo "Skipping GKE Helm deployment – _TARGET_ENV=${_TARGET_ENV}"
+        fi
+    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed and files listed (if keeping debug)
+
+# Global options for all build steps
 options:
   logging: CLOUD_LOGGING_ONLY
 
+# Substitutions that might be passed by your triggers
+# _TARGET_ENV should be set by your trigger configuration
+# (e.g., _TARGET_ENV=prod for main branch, _TARGET_ENV=staging for PRs)
+# PROJECT_ID and SHORT_SHA are automatically provided by Cloud Build.
