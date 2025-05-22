@@ -1,0 +1,34 @@
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: ""
+
+image:
+  repository: "us-central1-docker.pkg.dev/daring-emitter-457812-v7/quote-api/quote-api"
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: LoadBalancer
+  port: 8080
+
+# Ingress configuration
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+resources: {}
+
