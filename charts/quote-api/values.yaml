@@ -9,6 +9,7 @@ image:
   pullPolicy: Always
   tag: ""
 
+
 service:
   type: LoadBalancer
   port: 8080
