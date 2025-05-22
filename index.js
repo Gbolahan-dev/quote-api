@@ -14,6 +14,7 @@ app.get('/', (_, res) => {
 /* crash‑after‑5‑seconds demo  */
 app.get('/quote', (_, res) => {
   res.json({ quote: 'Boom! Simulated crash in 5 s' });
+
  /* setTimeout(() => {
     console.error('💥  Simulated fatal error — exiting');
     process.exit(1);// ← kills this container only
