@@ -112,7 +112,7 @@ steps:
       fi
 
 # ... (previous steps) ...
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
   id: debug-file-listing
   entrypoint: 'bash'
   args:
@@ -127,6 +127,7 @@ steps:
 # Your Helm step, ensure it has waitFor: ['debug-file-listing'] if that step is separate
 - id: deploy-to-gke-with-helm
   name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim' # Or your chosen Helm builder
+  entrypoint: 'sh'
   # ... rest of your helm step ...
   args:
     - '-c'
