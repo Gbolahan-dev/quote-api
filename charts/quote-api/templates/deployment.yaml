@@ -25,6 +25,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.port }}
+          resources: 
+            {{ toYaml .Values.resources | indent 12 }}
           livenessProbe:
             httpGet:
               path: /quote
