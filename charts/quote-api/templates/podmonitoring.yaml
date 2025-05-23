@@ -5,10 +5,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
-    matchlabels:
+    matchLabels:
       app: {{ include "quote-api.name" . }}
   endpoints:
-    - ports: http
+    - port: http
       path: /metrics 
       interval: 30s
 
