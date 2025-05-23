@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: {{ include "quote-api.name" . }}
+      annotations: 
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"    
     spec:
       serviceAccountName: {{ if .Values.serviceAccount.create }}{{ include "quote-api.fullname" . }}{{ else }}{{ .Values.serviceAccount.name }}{{ end }}
       containers:

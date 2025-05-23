@@ -1,0 +1,14 @@
+apiversion: monitoring.googleapis.com/v1
+kind: PodMonitoring 
+metadata:
+  name: quote-api-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchlabels:
+      app: {{ include "quote-api.name" . }}
+  endpoints:
+    - ports: http
+      path: /metrics 
+      interval: 30s
+
