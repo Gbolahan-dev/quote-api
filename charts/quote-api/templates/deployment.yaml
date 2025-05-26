@@ -12,7 +12,6 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ include "quote-api.name" . }}
         {{- include "quote-api.labels" . | nindent 8 }}
       annotations:
         prometheus.io/scrape: "true"
@@ -29,7 +28,7 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 4 }}
+            {{- toYaml .Values.resources | nindent 2 }}
           livenessProbe:
             httpGet:
               path: /quote
