@@ -8,10 +8,11 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "quote-api.selectorLabels" . | nindent 6 }}
+      app: {{ include "quote-api.name" . }}
   template:
     metadata:
       labels:
+        app: {{ include "quote-api.name" . }}
         {{- include "quote-api.labels" . | nindent 8 }}
       annotations:
         prometheus.io/scrape: "true"
