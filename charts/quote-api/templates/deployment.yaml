@@ -13,30 +13,32 @@ spec:
     metadata:
       labels:
         app: {{ include "quote-api.name" . }}
-      annotations: 
+        {{- include "quote-api.labels" . | nindent 8 }}
+      annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
-        prometheus.io/path: "/metrics"    
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: {{ if .Values.serviceAccount.create }}{{ include "quote-api.fullname" . }}{{ else }}{{ .Values.serviceAccount.name }}{{ end }}
       containers:
         - name: quote-api
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.port }}
-          resources: 
-            {{ toYaml .Values.resources | nindent 12 }}
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 4 }}
           livenessProbe:
             httpGet:
               path: /quote
-              port: {{ .Values.service.port }}
+              port: http
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /quote
-              port: {{ .Values.service.port }}
+              path: /readyz
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 5
-
