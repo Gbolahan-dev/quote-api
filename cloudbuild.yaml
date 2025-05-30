@@ -171,7 +171,7 @@ steps:
            echo "Helm deployment to GKE (environment: $_TARGET_ENV, namespace: $$TARGET_NAMESPACE) completed."
       else
            echo "Skipping GKE Helm deployment – _TARGET_ENV=${_TARGET_ENV} is not prod or staging"
-      fi
+         fi
   waitFor: ['debug-file-listing', 'push-sha-image']
   
 # Global options for all build steps
