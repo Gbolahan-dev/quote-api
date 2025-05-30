@@ -127,9 +127,9 @@ steps:
             echo "Preparing to deploy to GKE for environment: $_TARGET_ENV"
 
             TARGET_NAMESPACE="$_TARGET_ENV" # Use staging or quote-api (if prod is quote-api)
-        if [[ "$_TARGET_ENV" == "prod" ]]; then
+         if [[ "$_TARGET_ENV" == "prod" ]]; then
           TARGET_NAMESPACE="quote-api" # Explicitly set prod namespace if different from _TARGET_ENV value
-        fi
+         fi
         echo "Target GKE Namespace: $$TARGET_NAMESPACE"
 
         echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
