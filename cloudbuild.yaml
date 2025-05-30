@@ -124,7 +124,7 @@ steps:
          set -e
          set -x
          if [[ "$_TARGET_ENV" == "prod" ]] || [[ "$_TARGET_ENV" == "staging" ]]; then
-        echo "Preparing to deploy to GKE for environment: $_TARGET_ENV"
+            echo "Preparing to deploy to GKE for environment: $_TARGET_ENV"
 
         TARGET_NAMESPACE="$_TARGET_ENV" # Use staging or quote-api (if prod is quote-api)
         if [[ "$_TARGET_ENV" == "prod" ]]; then
