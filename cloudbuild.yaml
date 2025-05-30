@@ -143,7 +143,7 @@ steps:
            ./get_helm.sh --version $$HELM_VERSION
         
            echo "Configuring kubectl for GKE cluster..."
-        # !!! REPLACE THESE WITH YOUR ACTUAL CLUSTER NAME AND ZONE !!!
+           # !!! REPLACE THESE WITH YOUR ACTUAL CLUSTER NAME AND ZONE !!!
            gcloud container clusters get-credentials quote-api-cluster \
             --zone us-central1-a \
             --project=${PROJECT_ID}
