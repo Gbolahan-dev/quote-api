@@ -121,9 +121,17 @@ steps:
     args:
       - '-c'
       - |
-        if [[ "$_TARGET_ENV" == "prod" ]]; then
+        if [[ "$_TARGET_ENV" == "prod" ]] || [[ "$_TARGET_ENV" == "staging" ]]; then
           set -e # Exit immediately if a command exits with a non-zero status
           set -x # Print commands and their arguments as they are executed
+          echo "Preparing to deploy to GKE for environment: $_TARGET_ENV"
+
+          TARGET_NAMESPACE="$_TARGET_ENV"
+          if [[ "$_TARGET_ENV" == "prod" ]];
+              TARGET_NAMESPACE="quote-api"
+          fi
+          echo "Target GKE Namespace: $$TARGET_NAMESPACE "
+          
 
           echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
           apt-get update -y 
