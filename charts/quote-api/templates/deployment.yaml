@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: {{ include "quote-api.name" . }}
+      app.kubernetes.io/name: {{ include "quote-api.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
