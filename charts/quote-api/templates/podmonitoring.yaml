@@ -1,14 +1,20 @@
 apiVersion: monitoring.googleapis.com/v1
-kind: PodMonitoring 
+kind: PodMonitoring
 metadata:
-  name: quote-api-monitor
-  namespace: {{ .Release.Namespace }}
+  # Use the Helm release fullname to make the name unique
+  name: {{ include "quote-api.fullname" . }}-monitor 
+  namespace: {{ .Release.Namespace }} # This is already correct
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }} # Add standard Helm labels
 spec:
   selector:
     matchLabels:
-      app: {{ include "quote-api.name" . }}
+      # Ensure these labels match what's on your pods from deployment.yaml
+      app.kubernetes.io/name: {{ include "quote-api.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      # Or if you have a dedicated selectorLabels helper:
+      # {{ include "quote-api.selectorLabels" . | nindent 6 }}
   endpoints:
-    - port: http
-      path: /metrics 
-      interval: 30s
-
+  - port: http # Assumes your Deployment container port is named 'http'
+    path: /metrics
+    interval: 30s
