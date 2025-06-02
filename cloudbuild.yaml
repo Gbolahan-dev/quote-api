@@ -23,7 +23,7 @@ steps:
   - id: push-latest-image
     name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api:latest']
-    waitFor: ['build-image'] # Can run in parallel with push-sha-image after build-image
+    waitFor: ['build-image']
 
   # 4) Deploy to Cloud Run (ONLY for prod)
   - id: deploy-to-cloud-run
@@ -44,7 +44,7 @@ steps:
         else
           echo "Skipping Cloud Run deployment – _TARGET_ENV=${_TARGET_ENV}"
         fi
-    waitFor: ['push-latest-image'] # Ensure latest image is pushed
+    waitFor: ['push-latest-image']
 
   # 5) Optional Canary Split for Cloud Run (ONLY for prod)
   - id: canary-split-cloud-run
@@ -66,7 +66,7 @@ steps:
 
           if [[ -z "$$_cb_revision_list_output" ]]; then
             echo "❌ ERROR: Failed to fetch Cloud Run revision list or list is empty. Skipping canary."
-            exit 0 # Exit gracefully, don't fail the build
+            exit 0 # Exit gracefully
           fi
 
           mapfile -t _cb_rev_array <<< "$$_cb_revision_list_output"
@@ -99,7 +99,7 @@ steps:
         fi
     waitFor: ['deploy-to-cloud-run']
 
-  # 6) Debug File Listing (Optional, can be removed after confirming paths)
+  # 6) Debug File Listing (Optional)
   - id: debug-file-listing
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'bash'
@@ -109,54 +109,61 @@ steps:
         echo "--- Current working directory: $(pwd) ---"
         ls -la
         echo "--- Listing ./charts directory (if it exists): ---"
-        ls -la ./charts || true # Use '|| true' to not fail the build if dir doesn't exist
+        ls -la ./charts || true
         echo "--- Listing ./charts/quote-api directory (if it exists): ---"
-        ls -la ./charts/quote-api || true # Use '|| true'
-    waitFor: ['push-sha-image'] # Just needs the repo checkout
+        ls -la ./charts/quote-api || true
+    waitFor: ['push-sha-image']
 
-  # 7) Deploy to GKE with Helm (ONLY for prod)
+  # 7) Deploy to GKE with Helm (CONDITIONAL for prod AND staging)
   - id: deploy-to-gke-with-helm
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        if [[ "$_TARGET_ENV" == "prod" ]]; then
-          set -e # Exit immediately if a command exits with a non-zero status
-          set -x # Print commands and their arguments as they are executed
+        set -e
+        set -x
+        if [[ "$_TARGET_ENV" == "prod" ]] || [[ "$_TARGET_ENV" == "staging" ]]; then
+          echo "Preparing to deploy to GKE for environment: $_TARGET_ENV"
+
+          TARGET_NAMESPACE="$_TARGET_ENV"
+          if [[ "$_TARGET_ENV" == "prod" ]]; then
+            TARGET_NAMESPACE="quote-api"
+          fi
+          echo "Target GKE Namespace: $$TARGET_NAMESPACE"
 
           echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
           apt-get update -y 
           apt-get install -y kubectl google-cloud-sdk-gke-gcloud-auth-plugin
 
           echo "Installing Helm client..."
-          HELM_VERSION="v3.12.0" # Specify desired Helm 3 version
+          HELM_VERSION="v3.12.0"
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
           chmod 700 get_helm.sh
           ./get_helm.sh --version $$HELM_VERSION
-          
+        
           echo "Configuring kubectl for GKE cluster..."
           # !!! REPLACE THESE WITH YOUR ACTUAL CLUSTER NAME AND ZONE !!!
           gcloud container clusters get-credentials quote-api-cluster \
             --zone us-central1-a \
             --project=${PROJECT_ID}
-          
-          echo "Running helm upgrade for GKE..."
-          helm upgrade --install quote-api ./charts/quote-api \
-            --namespace quote-api \
+        
+          echo "Running helm upgrade for GKE Namespace: $$TARGET_NAMESPACE ..."
+          helm upgrade --install quote-api-$${TARGET_NAMESPACE} ./charts/quote-api \
+            --namespace $$TARGET_NAMESPACE \
             --create-namespace \
             --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
             --set image.tag=${SHORT_SHA} \
-            --atomic \
             --set image.pullPolicy=Always \
+            --atomic \
             --timeout 5m
-          
-          echo "Helm deployment to GKE completed."
+        
+          echo "Helm deployment to GKE (environment: $_TARGET_ENV, namespace: $$TARGET_NAMESPACE) completed."
         else
-          echo "Skipping GKE Helm deployment – _TARGET_ENV=${_TARGET_ENV}"
+          echo "Skipping GKE Helm deployment – _TARGET_ENV=${_TARGET_ENV} is not prod or staging"
         fi
-    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed and files listed (if keeping debug)
-
+    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed
+  
 # Global options for all build steps
 options:
   logging: CLOUD_LOGGING_ONLY
