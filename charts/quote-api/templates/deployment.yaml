@@ -20,7 +20,7 @@ spec:
         prometheus.io/port: "{{ .Values.service.port }}"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: {{ if .Values.serviceAccount.create }}{{ include "quote-api.fullname" . }}{{ else }}{{ .Values.serviceAccount.name }}{{ end }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: quote-api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
