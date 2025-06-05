@@ -2,7 +2,9 @@ replicaCount: 1
 
 serviceAccount:
   create: true
-  name: ""
+  name: quote-api-ksa
+
+projectId: daring-emitter-457812-v7 
 
 image:
   repository: ""
