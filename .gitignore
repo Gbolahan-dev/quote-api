@@ -2,3 +2,8 @@
 # Ignore SDK downloads
 google-cloud-sdk*
 *.tar.gz
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/crash.log
+infra/*.tfplan
