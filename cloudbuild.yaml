@@ -144,7 +144,7 @@ steps:
         
           echo "Configuring kubectl for GKE cluster..."
           # !!! REPLACE THESE WITH YOUR ACTUAL CLUSTER NAME AND ZONE !!!
-          gcloud container clusters get-credentials quote-api-cluster \
+          gcloud container clusters get-credentials quote-api-cluster-2 \
             --zone us-central1-a \
             --project=${PROJECT_ID}
         
