@@ -158,7 +158,7 @@ steps:
               --set projectId=$PROJECT_ID \           # For Workload Identity annotation
               --timeout 5m                            # This is the last option, no trailing \
 
-            echo "Helm deployment to GKE (environment: $_TARGET_ENV, namespace: $TARGET_NAMESPACE) completed."
+            echo "Helm deployment to GKE (environment: $_TARGET_ENV, namespace: $$TARGET_NAMESPACE) completed."
           else
             echo "Skipping GKE Helm deployment – _TARGET_ENV=$_TARGET_ENV is not prod or staging"
           fi
