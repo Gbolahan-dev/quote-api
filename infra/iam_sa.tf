@@ -47,6 +47,11 @@ resource "google_project_iam_member" "cb_deployer_2_run_dev" {
   member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
 }
 
+resource "google_project_iam_member" "cb_deployer_2_logging_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
+}
 
 ########################################################
 # 2.3 GKE Node Pool SA: "gke-node-sa-tf" + IAM roles
