@@ -116,10 +116,10 @@ steps:
 
 
     # Step #7: Deploy to GKE with Helm (CONDITIONAL for prod and staging)
-    - id: 'deploy-to-gke-with-helm'
-      name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-      entrypoint: 'bash'
-      args:
+  - id: 'deploy-to-gke-with-helm'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    args:
         - '-c'
         - |
           set -e  # Exit immediately if a command exits with a non-zero status.
@@ -162,7 +162,7 @@ steps:
           else
             echo "Skipping GKE Helm deployment – _TARGET_ENV=$_TARGET_ENV is not prod or staging"
           fi
-      waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed before deploying
+    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed before deploying
 
 # Global options for all build steps
 options:
