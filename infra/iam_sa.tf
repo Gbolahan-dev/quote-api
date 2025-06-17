@@ -23,6 +23,14 @@ resource "google_project_iam_member" "quote_api_gsa_2_logging_writer" {
 ########################################################
 # 2.2 Cloud Build Deployer SA: "cloudbuild-deployer-tf"
 ########################################################
+resource "google_service_account_iam_member" "cb_can_act_as_compute_for_run" {
+  project = var.project_id
+  # This is the ID badge of the Cloud Run machine
+  service_account_id = "projects/${var.project_id}/serviceAccounts/158322366388-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser" # This role grants the "act as" permission
+  # This is your Cloud Build worker
+  member             = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
+}
 
 resource "google_service_account" "cloudbuild_deployer_2" {
   account_id   = "cloudbuild-deployer-2"
