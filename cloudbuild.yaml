@@ -40,8 +40,8 @@ steps:
             --region=us-central1 \
             --platform=managed \
             --allow-unauthenticated \
-            --project=${PROJECT_ID} \
-            --traffictag=latest
+            --project=${PROJECT_ID} 
+            # --traffictag=latest
         else
           echo "Skipping Cloud Run deployment – _TARGET_ENV=${_TARGET_ENV}"
         fi
