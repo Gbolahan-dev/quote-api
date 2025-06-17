@@ -19,12 +19,25 @@ resource "google_project_iam_member" "quote_api_gsa_2_logging_writer" {
   member  = "serviceAccount:${google_service_account.quote_api_gsa_2.email}"
 }
 
+# Add this to the end of iam_sa.tf
+
+resource "google_service_account_iam_member" "quote_api_gsa_2_wi_user_staging" { // This is Instruction #2
+  service_account_id = google_service_account.quote_api_gsa_2.name // The Google ID badge
+  role               = "roles/iam.workloadIdentityUser"         // The "permission to link"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${kubernetes_namespace.staging_ns.metadata[0].name}/quote-api-ksa]"
+                                                                  // Links to Kubernetes badge "quote-api-ksa"
+                                                                  // in the "staging" room (Instruction #1)
+  depends_on = [
+    google_service_account.quote_api_gsa_2,
+    kubernetes_namespace.staging_ns // Link only after Google ID badge and Staging Room are ready
+  ]
+}
 
 ########################################################
 # 2.2 Cloud Build Deployer SA: "cloudbuild-deployer-tf"
 ########################################################
 resource "google_service_account_iam_member" "cb_can_act_as_compute_for_run" {
-  project = var.project_id
+ # project = var.project_id
   # This is the ID badge of the Cloud Run machine
   service_account_id = "projects/${var.project_id}/serviceAccounts/158322366388-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser" # This role grants the "act as" permission
@@ -33,6 +46,7 @@ resource "google_service_account_iam_member" "cb_can_act_as_compute_for_run" {
 }
 
 resource "google_service_account" "cloudbuild_deployer_2" {
+  project      = var.project_id
   account_id   = "cloudbuild-deployer-2"
   display_name = "Cloud Build Deployer SA (Terraform)"
 }
