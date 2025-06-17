@@ -149,7 +149,7 @@ steps:
             echo "Running helm upgrade for GKE Namespace: $TARGET_NAMESPACE ..."
             # Release name will be quote-api-prod or quote-api-staging
             helm upgrade --install quote-api-$${TARGET_NAMESPACE} ./charts/quote-api \
-              --namespace $TARGET_NAMESPACE \
+              --namespace $$TARGET_NAMESPACE \
               --create-namespace \
               --set image.repository=us-central1-docker.pkg.dev/$PROJECT_ID/quote-api/quote-api \
               --set image.tag=$SHORT_SHA \
@@ -160,7 +160,7 @@ steps:
 
             echo "Helm deployment to GKE (environment: $_TARGET_ENV, namespace: $$TARGET_NAMESPACE) completed."
           else
-            echo "Skipping GKE Helm deployment – _TARGET_ENV=$_TARGET_ENV is not prod or staging"
+            echo "Skipping GKE Helm deployment – _TARGET_ENV=${_TARGET_ENV} is not prod or staging"
           fi
     waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed before deploying
 
