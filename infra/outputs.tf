@@ -4,7 +4,7 @@
 
 output "artifact_registry_url_2" {
   description = "The Docker URL for the 'quote-api' image in the 'quote-api' Artifact Registry repository."
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/quote-api/quote-api"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}//${google_artifact_registry_repository.main_quote_api_repo.repository_id}/quote-api"
 }
 
 output "quote_api_gsa_2_email" {

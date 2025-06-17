@@ -17,3 +17,15 @@ variable "cluster_name" {
   type        = string
   default     = "quote-api-cluster"
 }
+
+variable "github_owner" {
+  description = "The owner of the GitHub repository."
+  type        = string
+  default     = "Gbolahan-dev"
+}
+
+variable "github_repo_name" {
+  description = "The name of the GitHub repository."
+  type        = string
+  default     = "quote-api"
+}
