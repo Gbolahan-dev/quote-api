@@ -130,7 +130,7 @@ steps:
 
             # Correctly sets TARGET_NAMESPACE to "prod" or "staging"
             TARGET_NAMESPACE="$_TARGET_ENV"
-            echo "Target GKE Namespace: $TARGET_NAMESPACE"
+            echo "Target GKE Namespace: $$TARGET_NAMESPACE"
 
             echo "Updating package list and installing kubectl and gke-gcloud-auth-plugin..."
             apt-get update -y && apt-get install -y kubectl google-cloud-sdk-gke-gcloud-auth-plugin
