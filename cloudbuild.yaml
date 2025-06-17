@@ -146,7 +146,7 @@ steps:
               --zone us-central1-a \
               --project=${PROJECT_ID}
 
-            echo "Running helm upgrade for GKE Namespace: $TARGET_NAMESPACE ..."
+            echo "Running helm upgrade for GKE Namespace: $$TARGET_NAMESPACE ..."
             # Release name will be quote-api-prod or quote-api-staging
             helm upgrade --install quote-api-$${TARGET_NAMESPACE} ./charts/quote-api \
               --namespace $$TARGET_NAMESPACE \
