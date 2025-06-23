@@ -1,20 +1,17 @@
-options:
-  logging: CLOUD_LOGGING_ONLY
-
 steps:
-  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
-    id: 'Install dependencies'
-    entrypoint: 'pnpm'
-    args: ['install']
+- name: gcr.io/cloud-builders/npm
+  id: install
+  args: ['install', '-g', 'pnpm@8', '&&', 'pnpm', 'install']
 
-  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
-    id: 'Lint'
-    entrypoint: 'pnpm'
-    args: ['run', 'lint']
-    waitFor: ['Install dependencies']
+- name: gcr.io/cloud-builders/npm
+  id: lint
+  entrypoint: 'pnpm'
+  args: ['run', 'lint']
+  waitFor: ['install']
 
-  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
-    id: 'Test'
-    entrypoint: 'pnpm'
-    args: ['run', 'test']
-    waitFor: ['Install dependencies']
+- name: gcr.io/cloud-builders/npm
+  id: test
+  entrypoint: 'pnpm'
+  args: ['run', 'test']
+  waitFor: ['install']
+
