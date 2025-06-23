@@ -1,0 +1,19 @@
+steps:
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'Install'
+    entrypoint: 'pnpm'
+    args: ['install']
+
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'Lint'
+    entrpoint: 'pnpm' 
+    args: ['run', 'Lint']
+    waitFor: ['install']
+
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'Test'
+    entrypoint: 'pnpm' 
+    args: ['run', 'Test']
+    waitFor: ['Install']
+
+

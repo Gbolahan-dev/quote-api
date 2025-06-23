@@ -23,6 +23,7 @@ resource "google_cloudbuild_trigger" "prod_trigger_tf" {
   // include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
 }
 
+/*
 resource "google_cloudbuild_trigger" "pr_trigger_tf" {
   project         = var.project_id
   name            = "quote-api-pr-trigger" // Exact name of your trigger in GCP
@@ -45,6 +46,28 @@ resource "google_cloudbuild_trigger" "pr_trigger_tf" {
   }
   // include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
 }
+*/
+
+
+resource "google_cloudbuild_trigger" "pr_trigger_tf" {
+  project  = var.project_id
+  name        = "quote-api-pr-trigger" // Exact name of your trigger in GCP
+  description     = "PR to main ->  Run fast validation checks (lint, test)" # New description"
+  filename        = "cloudbuild.pr.yaml"
+  service_account = google_service_account.cloudbuild_deployer_2.id // Use TF-managed SA
+
+  github {
+    owner = var.github_owner
+    name  = var.github_repo_name
+    pull_request{
+      branch  = "^main$"
+      comment_control = "COMMENTS_DISABLED"
+
+    }
+  }
+  substitutions = {}
+}
+
 
 # Define your third trigger ("quote-api-trigger") similarly.
 # Example:
