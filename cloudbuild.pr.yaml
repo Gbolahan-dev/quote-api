@@ -1,23 +1,19 @@
-# Add this block at the top level of cloudbuild.pr.yaml
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # STEP 0: Install project dependencies using pnpm with Node.js 20.
-  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
+  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
     id: 'Install dependencies'
     entrypoint: 'pnpm'
     args: ['install']
 
-  # STEP 1: Run the linter.
-  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
+  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
     id: 'Lint'
     entrypoint: 'pnpm'
     args: ['run', 'lint']
     waitFor: ['Install dependencies']
 
-  # STEP 2: Run the tests.
-  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
+  - name: 'docker.io/pnpm/pnpm:node-20' # <-- FULLY QUALIFIED NAME
     id: 'Test'
     entrypoint: 'pnpm'
     args: ['run', 'test']
