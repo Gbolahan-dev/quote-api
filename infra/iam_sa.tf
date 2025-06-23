@@ -33,14 +33,14 @@ resource "google_service_account_iam_member" "quote_api_gsa_2_wi_user_staging" {
   ]
 }
 
-/*
+
 resource "google_service_account_iam_member" "quote_api_gsa_2_wi_user_prod" {
   service_account_id = google_service_account.quote_api_gsa_2.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[${kubernetes_namespace.prod_ns.metadata[0].name}/quote-api-ksa]"
   depends_on         = [google_service_account.quote_api_gsa_2, kubernetes_namespace.prod_ns]
 }
-*/
+
 
 ########################################################
 # 2.2 Cloud Build Deployer SA: "cloudbuild-deployer-tf"

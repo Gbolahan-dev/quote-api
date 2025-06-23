@@ -31,7 +31,7 @@ resource "helm_release" "quote_api_staging_2" {
   ]
 }
 
-/*
+
 # helm.tf
 resource "helm_release" "quote_api_prod" { // New TF resource for prod
   name             = "quote-api-prod"     // Helm release name in Kubernetes for prod
@@ -41,7 +41,7 @@ resource "helm_release" "quote_api_prod" { // New TF resource for prod
 
   set {
     name  = "image.repository"
-    value = "${google_artifact_registry_repository.main_app_repo.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.main_quote_api_repo.repository_id}/quote-api"
+    value = "${google_artifact_registry_repository.main_quote_api_repo.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.main_quote_api_repo.repository_id}/quote-api"
   }
   set {
     name  = "image.tag"
@@ -66,7 +66,7 @@ resource "helm_release" "quote_api_prod" { // New TF resource for prod
     google_container_node_pool.secure_pool_2,
     google_service_account_iam_member.quote_api_gsa_2_wi_user_prod,
     kubernetes_namespace.prod_ns,
-    google_artifact_registry_repository.main_app_repo
+    google_artifact_registry_repository.main_quote_api_repo
   ]
-}*/
+}
 
