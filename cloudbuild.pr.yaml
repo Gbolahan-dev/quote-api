@@ -16,4 +16,4 @@ steps:
     args: ['run', 'Test']
     waitFor: ['Install']
 
-
+options:                                                                                                                      logging: CLOUD_LOGGING_ONLY

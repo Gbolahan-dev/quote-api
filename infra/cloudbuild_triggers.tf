@@ -55,6 +55,7 @@ resource "google_cloudbuild_trigger" "pr_trigger_tf" {
   description     = "PR to main ->  Run fast validation checks (lint, test)" # New description"
   filename        = "cloudbuild.pr.yaml"
   service_account = google_service_account.cloudbuild_deployer_2.id // Use TF-managed SA
+   
 
   github {
     owner = var.github_owner
@@ -65,9 +66,17 @@ resource "google_cloudbuild_trigger" "pr_trigger_tf" {
 
     }
   }
-  substitutions = {}
+  
+ 
+  substitutions = {}  
+ 
+/*  
+  options {
+    logging = "CLOUD_LOGGING_ONLY"
+*/
+  
+ 
 }
-
 
 # Define your third trigger ("quote-api-trigger") similarly.
 # Example:
