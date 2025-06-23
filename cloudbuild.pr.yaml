@@ -1,24 +1,24 @@
-# cloudbuild.pr.yaml
+# Add this block at the top level of cloudbuild.pr.yaml
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - name: 'node:20' # Use the official Node image which includes npx
+  # STEP 0: Install project dependencies using pnpm with Node.js 20.
+  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
     id: 'Install dependencies'
-    entrypoint: 'npx' # Use npx to run pnpm
-    args: ['pnpm', 'install']
-    # dir: '/workspace' # Cloud Build usually mounts /workspace, this is default
+    entrypoint: 'pnpm'
+    args: ['install']
 
-  - name: 'node:20' # Use the same Node image
+  # STEP 1: Run the linter.
+  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
     id: 'Lint'
-    entrypoint: 'npx'
-    args: ['pnpm', 'run', 'lint']
-    waitFor: ['Install dependencies'] # Corrected from your previous example
-    # dir: '/workspace'
+    entrypoint: 'pnpm'
+    args: ['run', 'lint']
+    waitFor: ['Install dependencies']
 
-  - name: 'node:20' # Use the same Node image
+  # STEP 2: Run the tests.
+  - name: 'pnpm/pnpm:node-20' # <-- PINNED TO NODE 20
     id: 'Test'
-    entrypoint: 'npx'
-    args: ['pnpm', 'run', 'test']
-    waitFor: ['Install dependencies'] # Corrected from your previous example
-    # dir: '/workspace'
+    entrypoint: 'pnpm'
+    args: ['run', 'test']
+    waitFor: ['Install dependencies']
