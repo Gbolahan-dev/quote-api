@@ -2,59 +2,35 @@
 options:
   logging: CLOUD_LOGGING_ONLY
 
-# This defines a shared "drive" called 'pnpm-vol'
-# that we will use to share the pnpm command between steps.
-volumes:
-  - name: 'pnpm-vol'
-    path: '/pnpm'
-
 steps:
-  # STEP 0: Install pnpm into our shared drive.
-  # We use the official node:20 image.
-  - name: 'node:20'
-    id: 'Install pnpm'
-    entrypoint: 'npm'
-    # The --prefix command tells npm EXACTLY where to install pnpm.
-    args: ['install', 'pnpm', '--prefix', '/pnpm']
-    # We connect this step to our shared drive.
-    volumes:
-      - name: 'pnpm-vol'
-        path: '/pnpm'
-
-  # STEP 1: Install project dependencies.
+  # STEP 0: Install dependencies
   - name: 'node:20'
     id: 'Install Dependencies'
     entrypoint: 'bash'
     args:
-      - '-c'
-      # We run the pnpm command using its full path from our shared drive.
-      - '/pnpm/node_modules/.bin/pnpm install'
-    # Connect this step to the same shared drive.
-    volumes:
-      - name: 'pnpm-vol'
-        path: '/pnpm'
-    waitFor: ['Install pnpm']
+    - '-c'
+    - |
+      npm install -g pnpm
+      pnpm install
 
-  # STEP 2: Run the linter.
+  # STEP 1: Run Linter
   - name: 'node:20'
     id: 'Lint'
     entrypoint: 'bash'
     args:
-      - '-c'
-      - '/pnpm/node_modules/.bin/pnpm run lint'
-    volumes:
-      - name: 'pnpm-vol'
-        path: '/pnpm'
+    - '-c'
+    - |
+      npm install -g pnpm
+      pnpm run lint
     waitFor: ['Install Dependencies']
 
-  # STEP 3: Run the tests.
+  # STEP 2: Run Tests
   - name: 'node:20'
     id: 'Test'
     entrypoint: 'bash'
     args:
-      - '-c'
-      - '/pnpm/node_modules/.bin/pnpm run test'
-    volumes:
-      - name: 'pnpm-vol'
-        path: '/pnpm'
+    - '-c'
+    - |
+      npm install -g pnpm
+      pnpm run test
     waitFor: ['Install Dependencies']
