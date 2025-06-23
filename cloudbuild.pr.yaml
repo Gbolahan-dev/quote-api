@@ -6,7 +6,7 @@ steps:
 
   - name: 'gcr.io/cloud-builders/npm'
     id: 'Lint'
-    entrpoint: 'pnpm' 
+    entrypoint: 'pnpm' 
     args: ['run', 'Lint']
     waitFor: ['install']
 
