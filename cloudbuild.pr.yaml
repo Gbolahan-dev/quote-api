@@ -1,35 +1,24 @@
-# Add this block at the top level of cloudbuild.pr.yaml
+# cloudbuild.pr.yaml
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  # STEP 0 (NEW): Install pnpm itself using npm.
-  # This step must run before any other step that uses 'pnpm'.
-  - name: 'gcr.io/cloud-builders/npm'
-    id: 'Install pnpm'
-    entrypoint: 'npm'
-    args: ['install', '--global', 'pnpm']
-
-  # STEP 1: Install project dependencies using pnpm.
-  # It waits for pnpm to be installed first.
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'node:20' # Use the official Node image which includes npx
     id: 'Install dependencies'
-    entrypoint: 'pnpm'
-    args: ['install']
-    waitFor: ['Install pnpm']
+    entrypoint: 'npx' # Use npx to run pnpm
+    args: ['pnpm', 'install']
+    # dir: '/workspace' # Cloud Build usually mounts /workspace, this is default
 
-  # STEP 2: Run the linter.
-  # It waits for the dependencies to be installed.
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'node:20' # Use the same Node image
     id: 'Lint'
-    entrypoint: 'pnpm'
-    args: ['run', 'lint']
-    waitFor: ['Install dependencies']
+    entrypoint: 'npx'
+    args: ['pnpm', 'run', 'lint']
+    waitFor: ['Install dependencies'] # Corrected from your previous example
+    # dir: '/workspace'
 
-  # STEP 3: Run the tests.
-  # It waits for the dependencies to be installed.
-  - name: 'gcr.io/cloud-builders/npm'
+  - name: 'node:20' # Use the same Node image
     id: 'Test'
-    entrypoint: 'pnpm'
-    args: ['run', 'test']
-    waitFor: ['Install dependencies']
+    entrypoint: 'npx'
+    args: ['pnpm', 'run', 'test']
+    waitFor: ['Install dependencies'] # Corrected from your previous example
+    # dir: '/workspace'
