@@ -16,3 +16,6 @@ steps:
     args: ['run', 'test']
     waitFor: ['install']
 
+
+options: # Add this block at the top level of cloudbuild.pr.yaml
+  logging: CLOUD_LOGGING_ONLY
