@@ -1,21 +1,35 @@
+# Add this block at the top level of cloudbuild.pr.yaml
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 steps:
+  # STEP 0 (NEW): Install pnpm itself using npm.
+  # This step must run before any other step that uses 'pnpm'.
   - name: 'gcr.io/cloud-builders/npm'
-    id: install
+    id: 'Install pnpm'
+    entrypoint: 'npm'
+    args: ['install', '--global', 'pnpm']
+
+  # STEP 1: Install project dependencies using pnpm.
+  # It waits for pnpm to be installed first.
+  - name: 'gcr.io/cloud-builders/npm'
+    id: 'Install dependencies'
     entrypoint: 'pnpm'
     args: ['install']
+    waitFor: ['Install pnpm']
 
+  # STEP 2: Run the linter.
+  # It waits for the dependencies to be installed.
   - name: 'gcr.io/cloud-builders/npm'
-    id: lint
-    entrypoint: 'pnpm' 
+    id: 'Lint'
+    entrypoint: 'pnpm'
     args: ['run', 'lint']
-    waitFor: ['install']
+    waitFor: ['Install dependencies']
 
+  # STEP 3: Run the tests.
+  # It waits for the dependencies to be installed.
   - name: 'gcr.io/cloud-builders/npm'
-    id: test
-    entrypoint: 'pnpm' 
+    id: 'Test'
+    entrypoint: 'pnpm'
     args: ['run', 'test']
-    waitFor: ['install']
-
-
-options: # Add this block at the top level of cloudbuild.pr.yaml
-  logging: CLOUD_LOGGING_ONLY
+    waitFor: ['Install dependencies']
