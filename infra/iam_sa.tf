@@ -84,17 +84,25 @@ resource "google_project_iam_member" "cb_deployer_2_logging_writer" {
   member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
 }
 
-# infra/iam_sa.tf
 
-# ADD THIS BLOCK TO FIX THE LOGGING PERMISSION ERROR
-
-# Grant the Cloud Build deployer service account the necessary role
-# to write logs to the default Cloud Build logs bucket.
-resource "google_project_iam_member" "cloudbuild_logwriter" {
+resource "google_project_iam_member" "cb_deployer_2_gke_viewer" {
   project = var.project_id
-  role    = "roles/cloudbuild.builds.builder" # This role includes log writing permissions
+  role    = "roles/container.clusterViewer"
   member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
 }
+
+resource "google_project_iam_member" "cb_deployer_2_compute_viewer" {
+  project = var.project_id
+  role    = "roles/compute.viewer"
+  member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
+}
+
+resource "google_project_iam_member" "cb_deployer_2_iam_sa_viewer" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountViewer"
+  member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
+}
+
 ########################################################
 # 2.3 GKE Node Pool SA: "gke-node-sa-tf" + IAM roles
 ########################################################
