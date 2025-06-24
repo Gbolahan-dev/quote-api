@@ -13,7 +13,7 @@ resource "helm_release" "quote_api_staging_2" {
   set {
     name  = "image.tag"
     # HARDCODE AN EXISTING TAG
-    value = "2c3d431" # This tag exists in your 'quote-api' repo
+    value = var.image_tag # This tag exists in your 'quote-api' repo
   }
   set {
     name  = "serviceAccount.name"
@@ -46,7 +46,7 @@ resource "helm_release" "quote_api_prod" { // New TF resource for prod
   set {
     name  = "image.tag"
     # This tag should be what your 'prod' trigger in Cloud Build pushes as 'latest' or its $SHORT_SHA
-    value = "latest" # Or make this a variable: var.prod_image_tag
+    value = var.image_tag # Or make this a variable: var.prod_image_tag
   }
   set {
     name  = "serviceAccount.name"

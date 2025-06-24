@@ -165,6 +165,61 @@ steps:
 #         fi
 #    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed
 
+  # NEW STEP: Deploys ONLY staging GKE using Terraform
+   - name: 'hashicorp/terraform:1.5.7'
+     id: 'Terraform Deploy Staging GKE'
+     dir: 'infra' # Important: run Terraform from the infra directory
+     entrypoint: 'sh'
+     args:
+      - '-c'
+      - |
+        # This GKE promotion flow is part of what happens when _TARGET_ENV is 'prod'
+        # (i.e., when you merge to the main branch and the prod trigger runs)
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          echo ">>> Terraform: Applying STAGING release (helm_release.quote_api_staging_2) with image ${SHORT_SHA}..."
+          terraform init
+          terraform apply -auto-approve -var="image_tag=${SHORT_SHA}" -target=helm_release.quote_api_staging_2
+          echo ">>> Terraform apply for STAGING GKE complete."
+        else
+          echo "Skipping STAGING GKE Terraform deployment for _TARGET_ENV=${_TARGET_ENV}"
+        fi
+    # Wait for the image to be pushed before trying to deploy it.
+    # Also, wait for debug-file-listing if you kept that step.
+     waitFor: ['push-sha-image', 'debug-file-listing']
+
+  # NEW STEP: Pauses the pipeline for manual approval
+   - name: 'gcr.io/cloud-builders/gcloud'
+     id: 'Hold for Production Approval'
+     entrypoint: 'bash'
+     args:
+      - '-c'
+      - |
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          echo "WAITING FOR MANUAL APPROVAL"
+          echo "Staging GKE has been updated with image ${SHORT_SHA}."
+          echo "Please verify the staging environment and then approve this build in the Cloud Build UI to deploy to production."
+        else
+          echo "Approval step not applicable for _TARGET_ENV=${_TARGET_ENV}"
+        fi
+     waitFor: ['Terraform Deploy Staging GKE']
+
+  # NEW STEP: Deploys ONLY production GKE using Terraform
+   - name: 'hashicorp/terraform:1.5.7'
+     id: 'Terraform Deploy Production GKE'
+     dir: 'infra' # Important: run Terraform from the infra directory
+     entrypoint: 'sh'
+     args:
+      - '-c'
+      - |
+        if [[ "$_TARGET_ENV" == "prod" ]]; then
+          echo ">>> Terraform: Applying PRODUCTION release (helm_release.quote_api_prod) with image ${SHORT_SHA}..."
+          terraform init
+          terraform apply -auto-approve -var="image_tag=${SHORT_SHA}" -target=helm_release.quote_api_prod
+          echo ">>> Terraform apply for PRODUCTION GKE complete."
+        else
+          echo "Skipping PRODUCTION GKE Terraform deployment for _TARGET_ENV=${_TARGET_ENV}"
+        fi
+     waitFor: ['Hold for Production Approval']
 
 # Global options for all build steps
 options:
