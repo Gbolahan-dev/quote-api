@@ -185,7 +185,7 @@ steps:
         fi
     # Wait for the image to be pushed before trying to deploy it.
     # Also, wait for debug-file-listing if you kept that step.
-   waitFor: ['push-sha-image', 'debug-file-listing']
+    waitFor: ['push-sha-image', 'debug-file-listing']
 
   # NEW STEP: Pauses the pipeline for manual approval
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -219,7 +219,7 @@ steps:
         else
           echo "Skipping PRODUCTION GKE Terraform deployment for _TARGET_ENV=${_TARGET_ENV}"
         fi
-   waitFor: ['Hold for Production Approval']
+    waitFor: ['Hold for Production Approval']
 
 # Global options for all build steps
 options:
