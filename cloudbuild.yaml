@@ -166,11 +166,11 @@ steps:
 #    waitFor: ['debug-file-listing', 'push-sha-image'] # Ensure image is pushed
 
   # NEW STEP: Deploys ONLY staging GKE using Terraform
-   - name: 'hashicorp/terraform:1.5.7'
-     id: 'Terraform Deploy Staging GKE'
-     dir: 'infra' # Important: run Terraform from the infra directory
-     entrypoint: 'sh'
-     args:
+  - name: 'hashicorp/terraform:1.5.7'
+    id: 'Terraform Deploy Staging GKE'
+    dir: 'infra' # Important: run Terraform from the infra directory
+    entrypoint: 'sh'
+    args:
       - '-c'
       - |
         # This GKE promotion flow is part of what happens when _TARGET_ENV is 'prod'
@@ -185,13 +185,13 @@ steps:
         fi
     # Wait for the image to be pushed before trying to deploy it.
     # Also, wait for debug-file-listing if you kept that step.
-     waitFor: ['push-sha-image', 'debug-file-listing']
+   waitFor: ['push-sha-image', 'debug-file-listing']
 
   # NEW STEP: Pauses the pipeline for manual approval
-   - name: 'gcr.io/cloud-builders/gcloud'
-     id: 'Hold for Production Approval'
-     entrypoint: 'bash'
-     args:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Hold for Production Approval'
+    entrypoint: 'bash'
+    args:
       - '-c'
       - |
         if [[ "$_TARGET_ENV" == "prod" ]]; then
@@ -201,14 +201,14 @@ steps:
         else
           echo "Approval step not applicable for _TARGET_ENV=${_TARGET_ENV}"
         fi
-     waitFor: ['Terraform Deploy Staging GKE']
+    waitFor: ['Terraform Deploy Staging GKE']
 
   # NEW STEP: Deploys ONLY production GKE using Terraform
-   - name: 'hashicorp/terraform:1.5.7'
-     id: 'Terraform Deploy Production GKE'
-     dir: 'infra' # Important: run Terraform from the infra directory
-     entrypoint: 'sh'
-     args:
+  - name: 'hashicorp/terraform:1.5.7'
+    id: 'Terraform Deploy Production GKE'
+    dir: 'infra' # Important: run Terraform from the infra directory
+    entrypoint: 'sh'
+    args:
       - '-c'
       - |
         if [[ "$_TARGET_ENV" == "prod" ]]; then
@@ -219,7 +219,7 @@ steps:
         else
           echo "Skipping PRODUCTION GKE Terraform deployment for _TARGET_ENV=${_TARGET_ENV}"
         fi
-     waitFor: ['Hold for Production Approval']
+   waitFor: ['Hold for Production Approval']
 
 # Global options for all build steps
 options:
