@@ -103,17 +103,13 @@ resource "google_project_iam_member" "cb_deployer_2_iam_sa_viewer" {
   member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
 }
 
-resource "google_storage_bucket_iam_member" "cb_deployer_2_tf_state_bucket_reader" {
-  bucket = "tf-state-daring-emitter-457812-v7"
-  role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}" 
+
+resource "google_storage_bucket_iam_member" "cb_deployer_2_tf_state_bucket_object_admin" {
+  bucket  = "tf-state-daring-emitter-457812-v7"  
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
 }
 
-resource "google_storage_bucket_iam_member" "cb_deployer_2_tf_state_bucket_writer" {
-  bucket = "tf-state-daring-emitter-457812-v7"
-  role   = "roles/storage.objectCreator"
-  member = "serviceAccount:${google_service_account.cloudbuild_deployer_2.email}"
-}
 
 ########################################################
 # 2.3 GKE Node Pool SA: "gke-node-sa-tf" + IAM roles
