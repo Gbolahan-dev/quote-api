@@ -17,7 +17,11 @@ variable "cluster_name" {
   type        = string
   default     = "quote-api-cluster"
 }
-
+variable "image_tag" {
+ description = "The Docker image to deploy"
+ type        = string
+ default     = "latest"
+}
 variable "github_owner" {
   description = "The owner of the GitHub repository."
   type        = string
