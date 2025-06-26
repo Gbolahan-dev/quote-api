@@ -82,6 +82,7 @@ resource "google_cloudbuild_trigger" "pr_trigger_tf" {
  
 }
 
+/*
 # Define your third trigger ("quote-api-trigger") similarly.
 # Example:
 resource "google_cloudbuild_trigger" "legacy_cloud_run_trigger_tf" {
@@ -102,4 +103,4 @@ resource "google_cloudbuild_trigger" "legacy_cloud_run_trigger_tf" {
   substitutions = {
      _TARGET_ENV = "prod" // Or whatever this trigger is meant for
   }
-}
+}*/
