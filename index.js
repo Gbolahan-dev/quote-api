@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 8080;
 
 // simple welcome
 app.get('/', (_, res) => {
-  res.send('Welcome to the Quote API v2 baby 😎');
+  res.send('Welcome to the Quote API v2 😎');
 });
 
 /* crash‑after‑5‑seconds demo  */
