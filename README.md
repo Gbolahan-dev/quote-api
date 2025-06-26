@@ -16,7 +16,7 @@ This project demonstrates the deployment of a Node.js application ("Quote API") 
 
 ## Architecture Overview
 
-(A high-level diagram and description of the components will be added here - See Task 4.2)
+![Architecture Diagram](./docs/architecture.png)
 
 This project consists of the following main components:
 *   **Quote API Application:** A simple Node.js Express application serving quotes.
