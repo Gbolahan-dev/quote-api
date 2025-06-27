@@ -8,7 +8,9 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
+      targetPort: http # <-- The fix
+      protocol: TCP
+      name: http
   selector:
     app.kubernetes.io/name: {{ include "quote-api.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
