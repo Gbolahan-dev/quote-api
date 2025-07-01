@@ -10,6 +10,7 @@ This project demonstrates the deployment of a Node.js application ("Quote API") 
 *   [Setup Instructions](#setup-instructions)
 *   [Development Workflow](#development-workflow)
 *   [Deployment Process](#deployment-process)
+*   [Local Development](#local-development)
 *   [Accessing the Application](#accessing-the-application)
 *   [Key Commands](#key-commands)
 *   [Troubleshooting](#troubleshooting)
@@ -152,6 +153,63 @@ Merging a PR to the `main` branch triggers the `quote-api-prod-trigger` and the 
     *   *(If UI approval is configured, click "Approve" in the Cloud Build UI).*
     *   Terraform is invoked: `terraform apply -target=helm_release.quote_api_prod -var="image_tag=${SHORT_SHA}"`
     *   This updates the `prod` namespace on GKE to use the same `SHORT_SHA`-tagged image that was verified in staging.
+
+## Local Development
+
+For rapid development and testing, you can run the application locally without deploying to GCP. There are two primary methods:
+
+### Method 1: Running with Node.js Directly
+
+This method is the fastest for iterative code changes. It assumes you have Node.js and `pnpm` installed locally.
+
+1.  **Install Dependencies:**
+    If you haven't already, install the project dependencies from the root of the repository:
+    ```bash
+    pnpm install
+    ```
+
+2.  **Run the Application:**
+    Start the server using the `start` script defined in `package.json`:
+    ```bash
+    pnpm start
+    ```
+    The server will start, and you should see the message: `listening on 8080`.
+
+3.  **Test the Application:**
+    Open a new terminal and use `curl` to test the endpoints:
+    ```bash
+    # Test the root endpoint
+    curl http://localhost:8080/
+
+    # Test the quote endpoint
+    curl http://localhost:8080/quote
+
+    # Test the metrics endpoint
+    curl http://localhost:8080/metrics
+    ```
+
+### Method 2: Running with Docker
+
+This method tests the application inside its production-like container environment. It assumes you have Docker installed and running locally.
+
+1.  **Build the Docker Image:**
+    From the root of the repository, build the image and give it a local tag (e.g., `quote-api-local`):
+    ```bash
+    docker build -t quote-api-local .
+    ```
+
+2.  **Run the Docker Container:**
+    Run the image, mapping port 8080 on your local machine to port 8080 inside the container:
+    ```bash
+    docker run -p 8080:8080 quote-api-local
+    ```
+    The server will start inside the container.
+
+3.  **Test the Application:**
+    Open a new terminal and use `curl` to test the endpoints on `localhost`:
+    ```bash
+    curl http://localhost:8080/
+    ```
 
 ## Accessing the Application
 
